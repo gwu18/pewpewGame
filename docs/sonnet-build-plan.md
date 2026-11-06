@@ -2,7 +2,7 @@
 
 **Author role:** senior designer (Opus) · **Executor:** Claude Sonnet, driven by Gary/Kevin · **Written:** Thu Nov 5, 2026
 **Demo:** 1st week of December 2026 → plan treats **Mon Nov 30** as "must be demo-ready" (demo could be as early as Tue Dec 1).
-**Repo:** local Git repo on Gary's Mac (`~/Developer/PewPew`) · **Stack (locked):** Swift + RealityKit + SwiftUI + ARKit, Xcode, visionOS · **No** backend, ML, DB, Unity.
+**Repo:** GitHub `gwu18/pewpewGame` (local clone on Gary's Mac) · **Stack (locked):** Swift + RealityKit + SwiftUI + ARKit, Xcode, visionOS · **No** backend, ML, DB, Unity.
 **Device:** Gary's **personal** Apple Vision Pro, personal signing (see §M0).
 
 How to use this doc:
@@ -610,7 +610,7 @@ Every Sonnet block below assumes the **shared preamble** is pasted first in each
 
 ### Shared preamble (paste at the top of every Sonnet session)
 ```text
-You are building PewPew, an Apple Vision Pro arcade game (visionOS) in a local Git repo on Gary's Mac (~/Developer/PewPew).
+You are building PewPew, an Apple Vision Pro arcade game (visionOS) in the GitHub repo gwu18/pewpewGame.
 Stack is LOCKED: Swift + SwiftUI + RealityKit + ARKit, Xcode 26 (deployment target visionOS 2.0).
 No Unity, no backend, no ML, no third-party packages. App target uses Swift 5 language mode;
 Packages/PewPewCore uses Swift 6 mode.
