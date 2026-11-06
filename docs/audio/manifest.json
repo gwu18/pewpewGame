@@ -1,0 +1,344 @@
+{
+ "sample_rate": 48000,
+ "round_bpm": 150,
+ "lobby_bpm": 100,
+ "files": [
+  {
+   "file": "music/music_lobby_loop.wav",
+   "sr": 48000,
+   "channels": 2,
+   "duration_s": 38.4,
+   "samples": 1843200,
+   "peak_dbfs": -8.63,
+   "lufs_integrated": -19.0,
+   "loop_boundary_jump": 0.00247,
+   "loop_p999_step": 0.03339,
+   "loop_seamless": true
+  },
+  {
+   "file": "music/music_results_sting.wav",
+   "sr": 48000,
+   "channels": 2,
+   "duration_s": 2.9,
+   "samples": 139200,
+   "peak_dbfs": -4.2,
+   "lufs_integrated": -16.0
+  },
+  {
+   "file": "music/music_round_final10_layer.wav",
+   "sr": 48000,
+   "channels": 2,
+   "duration_s": 25.6,
+   "samples": 1228800,
+   "peak_dbfs": -10.32,
+   "lufs_integrated": -27.2,
+   "loop_boundary_jump": 0.00076,
+   "loop_p999_step": 0.03195,
+   "loop_seamless": true
+  },
+  {
+   "file": "music/music_round_intense_loop.wav",
+   "sr": 48000,
+   "channels": 2,
+   "duration_s": 25.6,
+   "samples": 1228800,
+   "peak_dbfs": -4.79,
+   "lufs_integrated": -17.4,
+   "loop_boundary_jump": 0.00015,
+   "loop_p999_step": 0.0748,
+   "loop_seamless": true
+  },
+  {
+   "file": "music/music_round_loop.wav",
+   "sr": 48000,
+   "channels": 2,
+   "duration_s": 25.6,
+   "samples": 1228800,
+   "peak_dbfs": -6.56,
+   "lufs_integrated": -18.0,
+   "loop_boundary_jump": 0.00064,
+   "loop_p999_step": 0.06754,
+   "loop_seamless": true
+  },
+  {
+   "file": "sfx/arena_close.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.6395,
+   "samples": 30695,
+   "peak_dbfs": -6.99,
+   "lufs_momentary_max": -21.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/arena_open.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.89,
+   "samples": 42720,
+   "peak_dbfs": -8.49,
+   "lufs_momentary_max": -20.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/blaster_cock.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.078,
+   "samples": 3744,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -22.7,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/bullseye.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.4,
+   "samples": 19200,
+   "peak_dbfs": -1.92,
+   "lufs_momentary_max": -12.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/combo.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.195,
+   "samples": 9360,
+   "peak_dbfs": -2.49,
+   "lufs_momentary_max": -16.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/combo_break.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.18,
+   "samples": 8640,
+   "peak_dbfs": -7.35,
+   "lufs_momentary_max": -24.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/combo_x2.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.195,
+   "samples": 9360,
+   "peak_dbfs": -3.34,
+   "lufs_momentary_max": -16.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/count.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.148,
+   "samples": 7104,
+   "peak_dbfs": -3.55,
+   "lufs_momentary_max": -16.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/end.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.71,
+   "samples": 34080,
+   "peak_dbfs": -3.62,
+   "lufs_momentary_max": -14.0,
+   "leading_silence_ms": 0.5
+  },
+  {
+   "file": "sfx/expire.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.1898,
+   "samples": 9109,
+   "peak_dbfs": -5.76,
+   "lufs_momentary_max": -20.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/go.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.2995,
+   "samples": 14378,
+   "peak_dbfs": -4.26,
+   "lufs_momentary_max": -14.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/hit.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.25,
+   "samples": 12000,
+   "peak_dbfs": -1.02,
+   "lufs_momentary_max": -14.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/hit_red.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.25,
+   "samples": 12000,
+   "peak_dbfs": -1.0,
+   "lufs_momentary_max": -14.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/lock_on.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.04,
+   "samples": 1920,
+   "peak_dbfs": -7.87,
+   "lufs_momentary_max": -28.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/miss.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.0503,
+   "samples": 2412,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -26.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/new_high_score.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 1.25,
+   "samples": 60000,
+   "peak_dbfs": -5.24,
+   "lufs_momentary_max": -14.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/pew.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.12,
+   "samples": 5760,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -16.1,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/pew_b.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.12,
+   "samples": 5760,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -16.3,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/spawn.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.138,
+   "samples": 6624,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -18.1,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/spawn_roam.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.28,
+   "samples": 13440,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -16.2,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/tally.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.04,
+   "samples": 1920,
+   "peak_dbfs": -9.25,
+   "lufs_momentary_max": -26.0,
+   "leading_silence_ms": 0.0
+  },
+  {
+   "file": "sfx/tick.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.05,
+   "samples": 2400,
+   "peak_dbfs": -1.72,
+   "lufs_momentary_max": -22.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/time_up_buzzer.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.5952,
+   "samples": 28569,
+   "peak_dbfs": -6.36,
+   "lufs_momentary_max": -17.0,
+   "leading_silence_ms": 0.2
+  },
+  {
+   "file": "sfx/tutorial_success.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.45,
+   "samples": 21600,
+   "peak_dbfs": -2.79,
+   "lufs_momentary_max": -16.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/ui_back.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.08,
+   "samples": 3840,
+   "peak_dbfs": -6.4,
+   "lufs_momentary_max": -22.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/ui_tap.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.045,
+   "samples": 2160,
+   "peak_dbfs": -1.1,
+   "lufs_momentary_max": -22.3,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/ui_toggle_off.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.09,
+   "samples": 4320,
+   "peak_dbfs": -4.04,
+   "lufs_momentary_max": -23.0,
+   "leading_silence_ms": 0.1
+  },
+  {
+   "file": "sfx/ui_toggle_on.wav",
+   "sr": 48000,
+   "channels": 1,
+   "duration_s": 0.09,
+   "samples": 4320,
+   "peak_dbfs": -2.9,
+   "lufs_momentary_max": -22.0,
+   "leading_silence_ms": 0.1
+  }
+ ]
+}
