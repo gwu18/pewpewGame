@@ -2,8 +2,28 @@
 
 **Author role:** senior designer (Opus) · **Executor:** Claude Sonnet, driven by Gary/Kevin · **Written:** Thu Nov 5, 2026
 **Demo:** 1st week of December 2026 → plan treats **Mon Nov 30** as "must be demo-ready" (demo could be as early as Tue Dec 1).
-**Repo:** GitHub `gwu18/pewpewGame` (local clone on Gary's Mac) · **Stack (locked):** Swift + RealityKit + SwiftUI + ARKit, Xcode, visionOS · **No** backend, ML, DB, Unity.
+**Repo:** [github.com/gwu18/pewpewGame](https://github.com/gwu18/pewpewGame) (local clone on Gary's Mac). **The Xcode project is in `pew/`**: plan paths like `PewPew/...` mean `pew/PewPew/...` and `Packages/PewPewCore/...` means `pew/Packages/PewPewCore/...`. Design assets live in the repo at **`docs/visual/`** (mockups, sprites) and **`docs/audio/`** (`sfx/`, `music/`). · **Stack (locked):** Swift + RealityKit + SwiftUI + ARKit, Xcode, visionOS · **No** backend, ML, DB, Unity.
 **Device:** Gary's **personal** Apple Vision Pro, personal signing (see §M0).
+**Companion docs:** `docs/visual-design-spec.md` (refines §2.6, §5, §11 FX) and `docs/sound-design.md` (supersedes §5.5 audio; adds music).
+
+## Changelog
+- **Fri Nov 6, 2026 — priorities revision.** Added the strict **Priority order** section (core loop → finger-gun; nothing below may delay them) and the tier ladder. Tutorial moved out of M7 into a new post-core **M8 Tutorial & demo** milestone (outline level; attract mode is Stretch). M7 is now the **Polish & feedback** tier (M7a Audio & music system, M7b Feedback moments & accessibility), covering the features implied by `docs/sound-design.md`. The freeze milestone is renamed **M8 → M9**. §5.5 now points to the sound doc (music is in scope; the earlier "no music" lines are gone). `.finalSecondsTick` fires for n = 10…1. Calendar (§9), cut order (§12.2), Stretch list (§12.3), checklist and ownership updated. Repo/asset paths noted above.
+- Thu Nov 5, 2026 — initial plan.
+
+## Priority order (strict — read before anything else)
+1. **Core gameplay loop — MUST-1, Sun Nov 15 (M0–M3):** timed round → spawn → touch hit → score → results → play again.
+2. **Hand tracking + finger-gun detection and firing — MUST-2 gate, Thu Nov 19 (M4a, M4b).**
+
+**Nothing below these may delay them.** No Goal, Polish, Tutorial or Stretch work starts while a Must gate is red, and Gary does no post-gate work until MUST-2 passes. If a Must slips, later tiers slip or get cut (§12.2); the Must scope never shrinks to make room. The one allowed overlap: Kevin may start M5 core-side work (SpawnDirector, tests) once his M3 and M4b tasks are merged.
+
+| Tier | Contents | Milestones | Window |
+| --- | --- | --- | --- |
+| **Must** | Core loop; finger-gun | M0–M4b | Nov 5 – Nov 19 |
+| **Goal** | Variety/difficulty/movement · surface placement · **Polish & feedback** | M5, M6, M7a, M7b | Nov 20 – Nov 25 |
+| **Tutorial & demo** | First-run tutorial + How to Play | M8 | Nov 24 – Nov 26 |
+| **Stretch** | Attract (self-playing) demo mode + §12.3 | — | Only if everything is green Wed Nov 25; else post-demo |
+
+Feature freeze **Fri Nov 27** (M9). Demo **Dec 1–4**. Everything after the Nov 19 gate is cuttable, in the order in §12.2.
 
 How to use this doc:
 1. §1–§7 are **decisions**. They are final unless device testing proves one wrong; change them here, not in code comments.
@@ -26,7 +46,7 @@ Copy this file into the repo at `docs/sonnet-build-plan.md` during M0 so Sonnet 
 - **Both inputs are always live; distance decides.** Touch-mode targets spawn within arm's reach, Blaster-mode targets spawn 1.8–3.2 m away. No mode-lock logic needed.
 - **Placement is air-first.** Air-spawn in a comfort band always works; walls/tables via `PlaneDetectionProvider` are an add-on (Goal tier) with automatic fallback. Scene reconstruction is Stretch.
 - **Testability built in:** game rules live in a pure Swift package (`PewPewCore`) tested with `swift test`/Swift Testing; simulator uses **Look & Pinch** on targets + a DEBUG hit injector/autoplay bot; finger-gun classifier is unit-tested against **recorded hand-joint fixtures** from the device.
-- **Schedule:** finger-gun **gate Thu Nov 19** (11 days of buffer before Nov 30). Full touch game by **Sun Nov 15**.
+- **Schedule:** full touch game by **Sun Nov 15**, finger-gun **gate Thu Nov 19**. After the gate: Goal tier incl. Polish & feedback (Nov 20–25), then Tutorial & demo (Nov 24–26), freeze Nov 27. All post-gate work is cuttable (§12.2).
 
 ---
 
@@ -38,8 +58,8 @@ Copy this file into the repo at `docs/sonnet-build-plan.md` during M0 so Sonnet 
 | --- | --- | --- | --- |
 | Launch | `WindowGroup(id: "launcher")` plain window, ~520×380 pt, `.windowResizability(.contentSize)` | Wherever visionOS puts it | Logo, one-line pitch ("Hit the targets. Beat the clock."), **Enter Arena** button, small "Uses hand tracking" note. |
 | Enter | `openImmersiveSpace(id: "arena")` → on `.opened` → `dismissWindow(id: "launcher")` | — | Then request ARKit authorization (§6.5). On `.userCancelled`/`.error`, stay in launcher and show inline error text. |
-| Lobby | Attachment `"lobby"` in Arena | World-locked, placed **1.2 m ahead, 8° below eye line**, facing user, at the moment the lobby is shown | Round length (30s default / 60s), Controls (Blaster / Touch), Space (Stay Put / Roam Room), Difficulty (M5), Big Targets toggle (M7), **Start**, How to Play, Exit Arena. Standard glass panel. |
-| Tutorial | Attachment `"tutorial"` (small card) + practice targets | Card 0.9 m ahead, 20° below eye line | §7.4 |
+| Lobby | Attachment `"lobby"` in Arena | World-locked, placed **1.2 m ahead, 8° below eye line**, facing user, at the moment the lobby is shown | Round length (30s default / 60s), Controls (Blaster / Touch), Space (Stay Put / Roam Room), Difficulty (M5), Big Targets toggle (M7b), Music toggle (M7a), **Start**, How to Play (M8), Exit Arena. Standard glass panel. |
+| Tutorial | Attachment `"tutorial"` (small card) + practice targets | Card 0.9 m ahead, 20° below eye line | §7 (M8) |
 | Countdown | Attachment `"countdown"` | World-locked at **arena forward**, 1.6 m ahead, eye height | "3 · 2 · 1 · GO!" — Press Start 2P font, 1 s per number, GO 0.5 s, beep each. |
 | Play | Attachment `"hud"` | **Lazy-follow**, 1.1 m ahead, 18° below eye line (§1.3) | Time left (big), score, combo badge. `allowsHitTesting(false)` — HUD is never tappable. |
 | Results | Attachment `"results"` | Same placement rule as lobby (re-placed in front of the user's current heading) | Score hero + stat grid + **Play Again** (primary) + **Menu**. |
@@ -170,7 +190,7 @@ Touch detection runs in every state except UNTRACKED (it doesn't care about pose
 
 ### 3.1 Round
 - Lengths 30 s (default) / 60 s. Countdown 3·2·1·GO (3.5 s total). Timer starts at GO.
-- Last 5 s: time text turns Gold and pulses, tick sound each second.
+- Last 5 s: time text turns Gold and pulses, tick sound each second. `.finalSecondsTick(n)` is emitted for n = 10…1; at 10 s left the music crossfades to the intense loop (M7a, `docs/sound-design.md` §2).
 - At 0: all live targets vanish (`.roundEnded`, *not* counted as expired), "whistle", results after 0.6 s.
 
 ### 3.2 Spawn / pacing
@@ -319,20 +339,8 @@ Air-spawn is the demo baseline. Surface placement only in Roam mode, 50 % of spa
 
 Implement shards/popups with `Entity.move(to:relativeTo:duration:timingFunction:)` and a small pool; popup text via `MeshResource.generateText`. No `ParticleEmitterComponent` needed for MVP.
 
-### 5.5 MVP audio (generate with jsfxr/sfxr, 16-bit 44.1 kHz mono WAV, < 0.5 s each)
-| File | Sound | Played at |
-| --- | --- | --- |
-| `pew.wav` | Laser blip, short | Gun hand (spatial) |
-| `hit.wav` | Pop + ding | Target (spatial) |
-| `bullseye.wav` | Double ding, higher | Target (spatial) |
-| `spawn.wav` | Soft rising blip | Target (spatial) — critical in Roam |
-| `expire.wav` | Soft "fwip" down | Target (spatial) |
-| `miss.wav` | Quiet tick | Ray end (spatial) |
-| `count.wav` / `go.wav` | Beep / higher beep | Countdown attachment |
-| `tick.wav` | Final-5s tick, results tally | HUD |
-| `end.wav` | Whistle | HUD |
-
-Spatial: entity gets `SpatialAudioComponent(gain: −6)` and `entity.playAudio(resource)`. Preload all `AudioFileResource`s when the Arena opens (flag: visionOS 2 offers `try await AudioFileResource(named:)`; older `AudioFileResource.load(named:)` also works). Non-spatial UI sounds: play from an entity parented to the HUD with `ChannelAudioComponent()` (or `AmbientAudioComponent`).
+### 5.5 Audio → see `docs/sound-design.md`
+The sound doc is the source of truth for audio and **supersedes** the earlier table here: 28 finished SFX (48 kHz mono WAV) and 5 music files in the repo at `docs/audio/sfx/` and `docs/audio/music/`, the event → cue map, pooled spatial emitters (never play from a target entity), the UI/music channels, voice cap, ducking, and the **music system** (lobby loop → silent countdown → round loop → intense at 10 s → whistle → results sting, with a lobby Music toggle). Music is in scope (Goal tier, M7a). Don't duplicate its values here or in code comments. Core SFX (`spawn`, `hit*`, `bullseye`, `expire`, `miss`, `pew`, `count`/`go`, `tick`, `end`) are the floor; the rest belong to the Polish & feedback features in M7.
 
 ### 5.6 Accessibility
 - **Big Targets** toggle (lobby): size ×1.4, aim assist ×1.5.
@@ -389,6 +397,8 @@ No special entitlements are needed (works with free personal team).
 
 ## 7. Onboarding (brief §3, §11.6)
 
+**Tier: Tutorial & demo — post-core.** Built in **M8**, after MUST-1, the MUST-2 finger-gun gate and the Goal tier; it never delays them. Until M8 lands the lobby's "How to Play" can show a static card ("Poke targets. Finger-gun, drop thumb to shoot."). The table below is the design target; M8 keeps it at outline level.
+
 Runs automatically on first Start (`@AppStorage("tutorialDone") == false`), or via "How to Play". Skippable ("Skip" button on card). Target time: **20–30 s**. No timer, no score.
 
 | Step | Card text (≤ 8 words) | Target | Advances when |
@@ -398,13 +408,16 @@ Runs automatically on first Start (`@AppStorage("tutorialDone") == false`), or v
 | 3 Fire | "Drop your thumb to shoot!" | 1 Normal blaster target 2 m ahead | Hit (blaster) |
 | 4 Done | "Nice! Hit as many as you can." (1.5 s) | — | auto → lobby (or straight into countdown if launched from Start) |
 
-Steps 2–3 are skipped if hand tracking is unavailable or Controls = Touch. In `lookPinch` mode, step 1 reads "Look at it and pinch!". Before M4 lands, only step 1 exists.
+Steps 2–3 are skipped if hand tracking is unavailable or Controls = Touch. In `lookPinch` mode, step 1 reads "Look at it and pinch!". Each completed step plays `tutorial_success`; the lobby music ducks while the tutorial runs (`docs/sound-design.md` §2).
+
+**Attract / demo mode (Stretch, §12.3):** when the lobby sits idle (no input for ~20 s), a self-playing round runs behind the lobby panel, driven by the existing autoplay bot: targets spawn and get "hit" with the normal FX, no score is recorded, SFX stay muted (the lobby loop keeps playing), and any hand movement toward the panel or any pinch stops it instantly. It needs a release-safe bot (the current `AutoplayBot` is DEBUG-only).
 
 ---
 
 ## 8. Architecture
 
 ### 8.1 Repo layout
+In the real repo ([gwu18/pewpewGame](https://github.com/gwu18/pewpewGame)) everything below except `README.md` and `docs/` sits under **`pew/`** (`pew/PewPew.xcodeproj`, `pew/PewPew/`, `pew/Packages/PewPewCore/`). Repo-root `docs/` holds this plan, `visual-design-spec.md`, `sound-design.md`, `docs/visual/` (reference mockups/sprites, not app resources) and `docs/audio/` (source WAVs; copied into `pew/PewPew/Resources/Audio/` in M7a).
 ```
 PewPew/   (local repo root, e.g. ~/Developer/PewPew)
 ├── README.md
@@ -549,7 +562,7 @@ public enum GamePhase: Equatable, Sendable {
 ```
 `registerHit` returns `nil` (ignored) unless phase is `.playing` or `.tutorial`, the target is live, not already resolved, and `timestamp ≤ expiresAt`. On success it calls `arena.removeTarget(id, .hit(outcome))`, updates HUD, emits `.targetHit(outcome, id)`, and schedules the next spawn. This replaces `GameManager.TargetHit()` from earlier docs — same contract, Swift-idiomatic name.
 
-`GameEvent`: `.countdownTick(Int)`, `.go`, `.finalSecondsTick(Int)`, `.roundEnded(RoundResult)`, `.targetSpawned(TargetID)`, `.targetHit(HitOutcome, TargetID)`, `.targetExpired(TargetID)`, `.missedShot`, `.comboChanged(Double)`, `.tutorialAdvanced(TutorialStep)`.
+`GameEvent`: `.countdownTick(Int)`, `.go`, `.finalSecondsTick(Int)`, `.roundEnded(RoundResult)`, `.targetSpawned(TargetID)`, `.targetHit(HitOutcome, TargetID)`, `.targetExpired(TargetID)`, `.missedShot`, `.comboChanged(Double)`, `.tutorialAdvanced(TutorialStep)`. `.finalSecondsTick(n)` fires for n = 10…1 (tick sound only at n ≤ 5; music switch at 10). App-side feedback hooks that are *not* GameEvents (InputCoordinator/AppModel, M7): `armed(hand)`, `fired(hand)`, `lockOn(TargetID)`, `newSessionBest` — see `docs/sound-design.md` §7.
 
 ### 8.3 State transitions (legal only)
 ```
@@ -586,6 +599,8 @@ Any other call is a no-op (assert in DEBUG). Config is read-only outside `.lobby
 
 Syncs: **Tue** = integrate/merge, **Thu** = device test. Thanksgiving Thu Nov 26 = light day.
 
+**Rule:** the two Must gates (MUST-1 Sun Nov 15, MUST-2 Thu Nov 19) come first. Nothing after them starts until they're green (only exception: Kevin's M5 core-side prep, §Priority order). Every row after Nov 19 is cuttable in the §12.2 order.
+
 | Dates | Milestone | Gary (AR / interaction) | Kevin (logic / UI) | Gate |
 | --- | --- | --- | --- | --- |
 | Thu Nov 5 – Sat Nov 7 | **M0** Setup & signing | Signing, pair device, Developer Mode, first device deploy | Repo hygiene, project skeleton, `PewPewCore` package + CI-less test run | Blank Arena on device |
@@ -594,13 +609,18 @@ Syncs: **Tue** = integrate/merge, **Thu** = device test. Thanksgiving Thu Nov 26
 | Mon Nov 9 – Sat Nov 14 | **M4a** Finger-gun pose + aim | Hand recorder, classifier, FSM, aim visuals, Gesture Lab | — | Reticle tracks reliably on device |
 | Wed Nov 11 – Sun Nov 15 | **M3** UI shell & full touch loop | Panel placement, HUD follow, head pose | Launcher, lobby, countdown, HUD, results | **MUST-1: full touch game Sun Nov 15** |
 | Sun Nov 15 – Thu Nov 19 | **M4b** Fire + shot hits | Thumb hammer, lookback, HitMath, shot FX | Missed-shot stats, blaster results line | **MUST-2: finger-gun gate Thu Nov 19** |
-| Mon Nov 16 – Sat Nov 21 | **M5** Variety, difficulty, movement | Motion system, roam bands | Types/weights/difficulty/toggle logic + UI | Toggle + 3 types on device |
-| Fri Nov 20 – Tue Nov 24 | **M6** Surface placement (Goal, cuttable) | Planes, wall/table placement, fallback | Lobby notes for denied sensing | Targets on walls in Roam |
-| Sat Nov 21 – Thu Nov 26 | **M7** Juice, audio, onboarding, a11y | FX polish, spatial audio | Tutorial flow, results tally, Big Targets, Reduce Motion | Playtest with 2 first-timers |
-| Fri Nov 27 – Mon Nov 30 | **M8** Freeze & demo | Fresh install, demo room test | README, demo script | Tag `v1.0-demo` Sun Nov 29 |
+| *— after the Nov 19 gate: Goal tier (cuttable) —* | | | | |
+| Fri Nov 20 – Sun Nov 22 | **M5** Variety, difficulty, movement | Motion system, roam bands | Types/weights/difficulty/toggle logic + UI (core prep may start Mon Nov 16, see rule) | Toggle + 3 types on device |
+| Fri Nov 20 – Tue Nov 24 | **M7a** Polish & feedback: audio & music system | AudioBank: spatial emitter pool, hand/ray cues, cock + lock-on cues | `SoundCue` map + tests, MusicDirector, Music toggle, asset copy | Every cue + music state machine on device |
+| Sat Nov 21 – Tue Nov 24 | **M6** Surface placement (first Goal cut) | Planes, wall/table placement, fallback | Lobby notes for denied sensing | Targets on walls in Roam |
+| Sun Nov 22 – Wed Nov 25 | **M7b** Polish & feedback: feedback moments & a11y | Score popups, expire warning/feedback, arena open/close transition, FX reduce-motion | Combo chip + milestones, session best badge, results tally, final-seconds HUD, Big Targets, Reduce Motion | Every feedback moment seen in one playtest round |
+| *— Tutorial & demo tier (cuttable) —* | | | | |
+| Tue Nov 24 – Thu Nov 26 | **M8** Tutorial & demo | Tutorial target placement, pose hook | Tutorial flow + card, How to Play | 2 first-timers finish unaided |
+| Wed Nov 25 – Thu Nov 26 | *Stretch:* attract mode | — | Release-safe bot + idle trigger | Only if every row above is green Wed Nov 25 |
+| Fri Nov 27 – Mon Nov 30 | **M9** Freeze & demo | Fresh install, demo room test | README, demo script | **Feature freeze Fri Nov 27**; tag `v1.0-demo` Sun Nov 29 |
 | Tue Dec 1 – Fri Dec 4 | Demo | | | |
 
-Finger-gun tuning buffer: Nov 20–24 is explicitly reserved for Gary to keep tuning if the gate is only partially met; M6 shrinks first.
+Finger-gun tuning buffer: Nov 20–24 is explicitly reserved for Gary to keep tuning if the gate is only partially met. In that case M8 extras and M6 are cut first, Gary's M7a/M7b items slide to Nov 23–25, and §12.2 applies from the top.
 
 ---
 
@@ -617,7 +637,11 @@ Packages/PewPewCore uses Swift 6 mode.
 
 The design + architecture source of truth is docs/sonnet-build-plan.md in the repo. Read §8
 (architecture) and §11 (tuning constants) before writing code. Follow its file layout and type names
-exactly. All numeric constants must come from Packages/PewPewCore/Sources/GameCore/Tuning.swift.
+exactly. All numeric constants must come from pew/Packages/PewPewCore/Sources/GameCore/Tuning.swift.
+The Xcode project lives in pew/: plan paths PewPew/... mean pew/PewPew/..., Packages/... means
+pew/Packages/.... Visual/audio specs: docs/visual-design-spec.md, docs/sound-design.md; reference
+assets in docs/visual/ and docs/audio/.
+Priority is strict: core loop, then finger-gun. Never trade Must scope for polish.
 
 Hard rules:
 - One scoring entry point: GameSession.registerHit(_:). Nothing else changes score.
@@ -818,7 +842,7 @@ Device — poke with either fingertip works. Do NOT add timer/menus/scoring form
 Milestone M2 — real round engine in PewPewCore. Read plan §3 (all), §8.2, §8.3, §11.
 
 1. GamePhase.swift and GameEvent.swift exactly per §8.2 (TutorialStep enum included; tutorial
-   behavior comes in M7 — for now start() always goes to countdown).
+   behavior comes in M8 — for now start() always goes to countdown).
 2. SpawnDirector (struct, pure): inputs Tuning, RoundConfig, RNG, round start/end times. API:
    `mutating func nextRequests(now:, liveCount:) -> [SpawnRequest]` and
    `mutating func targetResolved(at:)`. Rules: concurrency per difficulty; first spawn uniform
@@ -930,7 +954,7 @@ Milestone M3 (spatial half) — head pose, panel placement, HUD lazy-follow. Rea
    Simulator/unsupported fallback: position (0, 1.5, 0), forward -Z. Provide yawForward (XZ-projected).
 2. Arena/PanelPlacer.swift: place(entity, distance:, pitchDegrees:) using current head pose, yaw-only
    facing toward the user. Rules: lobby & results 1.2 m / −8°; countdown at arenaForward 1.6 m eye
-   height; tutorial card 0.9 m / −20° (M7). HUD lazy-follow per §1.3 with Tuning.HUD values
+   height; tutorial card 0.9 m / −20° (M8). HUD lazy-follow per §1.3 with Tuning.HUD values
    (distance 1.1, pitch −18°, yaw threshold 25°, position threshold 0.4 m, time constant 0.25 s,
    settle 5°/0.05 m). Fallback HUD position (0, 1.25, −1.1).
 3. ArenaView: register attachments "lobby", "countdown", "hud", "results" (Kevin's views; use
@@ -1017,7 +1041,7 @@ thumb, steady at 3 m; tests pass on recorded fixtures. Do NOT fire or score shot
 - 3 people (including one first-timer) each play a 30 s Blaster round: **≥ 90 % of intentional shots register a shot event** (Gesture Lab fire count vs. self-reported), **0 false fires** during 60 s of idle hands-in-lap + 60 s of talking with hands, **≥ 70 % hit rate** at Normal for Gary.
 - Aim on fire does not visibly drop (lookback works): shooting a Small target at 2.5 m dead-center lands ρ < 0.5 most of the time.
 - Results show Shots fired and accuracy that includes missed shots.
-- If gate is missed: keep tuning Nov 20–24 (M6 shrinks), and enable Plan B toggle in the lobby by Tue Nov 24 latest.
+- If gate is missed: keep tuning Nov 20–24 (post-gate tiers give way in the §12.2 cut order: M8 extras, then M6), and enable Plan B toggle in the lobby by Tue Nov 24 latest.
 
 **Do NOT yet:** dual-weapon, skins, voice, other gestures.
 
@@ -1061,7 +1085,7 @@ tests pass. Do NOT add other weapons, skins, voice, or new gestures.
 
 ---
 
-### M5 — Variety, difficulty, movement toggle (Mon Nov 16 – Sat Nov 21)
+### M5 — Variety, difficulty, movement toggle (Goal; Fri Nov 20 – Sun Nov 22, Kevin's core prep from Mon Nov 16)
 
 **Goal:** Small and Moving targets, Easy/Normal/Hard, Stay Put / Roam Room — all from the lobby.
 
@@ -1070,7 +1094,7 @@ tests pass. Do NOT add other weapons, skins, voice, or new gestures.
 **Acceptance:**
 - Tests: difficulty multipliers, weights (statistical test over 10 000 seeded picks within ±2 %), roam lifetime ×1.5.
 - Sim: autoplay at Hard shows two concurrent targets; Moving targets strafe smoothly at the specified amplitude/period.
-- Device: Roam Room spawns targets behind you (spawn blip — placeholder `print` until M7 audio) and within 0.6–2.0 m height; switching Space is disabled mid-round.
+- Device: Roam Room spawns targets behind you (spawn blip — placeholder `print` until M7a audio) and within 0.6–2.0 m height; switching Space is disabled mid-round.
 
 **Do NOT yet:** planes/walls (M6), decoys, adaptive difficulty.
 
@@ -1110,7 +1134,7 @@ Do NOT add plane/wall placement, decoys, or adaptive difficulty.
 
 ---
 
-### M6 — Surface placement (Goal tier; Fri Nov 20 – Tue Nov 24; first thing to cut)
+### M6 — Surface placement (Goal tier; Sat Nov 21 – Tue Nov 24; first Goal item to cut)
 
 **Goal:** in Roam Room, about half the targets appear on real walls/tables; everything else and every failure falls back to air.
 
@@ -1156,59 +1180,109 @@ sensing denied still plays. Do NOT add scene reconstruction, occlusion, or World
 
 ---
 
-### M7 — Juice, audio, onboarding, accessibility (Sat Nov 21 – Thu Nov 26)
+### M7 — Polish & feedback tier (Goal; Fri Nov 20 – Wed Nov 25; after the MUST-2 gate)
 
-**Goal:** first-timers understand it in 30 s and it sounds/feels arcade.
+**Goal:** it sounds and feels like an arcade cabinet: every important moment has an audio cue *and* a visual twin. High-level only; audio specifics live in `docs/sound-design.md`, visual specifics in `docs/visual-design-spec.md` §4–§7. Starts only after MUST-2 passes; every item is cuttable (§12.2).
 
-**Files:** `Arena/AudioBank.swift` + `Resources/Audio/*.wav` (§5.5), `HitFX` score popups (3D text) + combo pop hook, `UI/TutorialCard.swift`, `GameSession` tutorial phases, `PanelPlacer` tutorial card, `LobbyPanel` "How to Play" + Big Targets toggle, Reduce Motion plumbing, results tally animation.
+| Feature | Audio (`docs/sound-design.md`) | Visual twin | Sub-milestone |
+| --- | --- | --- | --- |
+| Core event SFX + spatial emitters | `spawn*`, `hit*`, `bullseye`, `expire`, `miss`, `pew*`, `count`/`go`, `end` | (existing FX) | M7a |
+| Music system: lobby loop → silent countdown → round loop → final-10 s intense → whistle → results sting; Music toggle; ducking | `music/*` | — | M7a |
+| Last-seconds ticks + intense music switch | `tick` (n ≤ 5), crossfade at 10 s | Gold pulsing timer (n ≤ 5) | M7a (audio) · M7b (HUD) |
+| Blaster cock + lock-on feedback | `blaster_cock`, `lock_on` | Armed cube; lock-on brackets pop | M7a (cues) · M7b (visual check) |
+| Combo milestones ×1.5 / ×2, combo break | `combo`, `combo_x2`, `combo_break` (off by default) | HUD combo chip pop; ×2 chip Gold | M7b |
+| Target expire feedback | `expire` | Expire warning blink + gray shrink/drop | M7b |
+| Score tally on results | `tally` | Count-up over 0.8 s (static under Reduce Motion) | M7b |
+| New high score / session best (in-memory, per run) | `new_high_score` (1.0 s after the sting) | "NEW BEST" chip on results | M7b |
+| Arena open / close transitions | `arena_open`, `arena_close` | Lobby fades in after preload; panels fade out before dismiss | M7b |
+| Score popups, Big Targets, Reduce Motion, Increase Contrast | UI toggles (`ui_toggle_*`) | Visual spec §4.4, §7 | M7b |
 
-**Acceptance:**
-- Two people who have never used PewPew complete the tutorial in ≤ 40 s without spoken help and then play a Blaster round.
-- Every event in §5.5 makes its sound from the right place (spawn blip behind you in Roam is locatable).
-- Reduce Motion (Settings → Accessibility → Motion) removes bob/shards travel/pulses/tally; Big Targets visibly enlarges targets and assist.
-- No frame hitches on hit (pools warmed, audio preloaded) — check with Xcode's RealityKit Trace or visually.
+Persistent high scores (`@AppStorage`) stay **Stretch**; the session best above is in memory only.
 
-**Do NOT:** music bed, voice, high-score persistence (Stretch).
+#### M7a — Audio & music system (Fri Nov 20 – Tue Nov 24)
+**Scope:** asset copy from `docs/audio/` into `pew/PewPew/Resources/Audio/`, `SoundCue` mapping (pure, tested), `AudioBank` (pooled spatial emitters, hand and UI channels, voice cap), `MusicDirector` (the music state machine), Music toggle, `.finalSecondsTick` for n = 10…1, cock/lock-on/session-best hooks.
+**Acceptance:** every cue plays from the right place; spawn cue behind you is locatable with eyes closed; music runs lobby → silent countdown → round → intense at 10 s → whistle → sting → lobby with no gaps or clicks; Music toggle works; no hitch on first hit.
+**Ownership:** Gary — AudioBank, hand/ray cues, lock-on hook. Kevin — `SoundCue` + tests, MusicDirector, Music toggle, `finalSecondsTick` change.
 
-**Ownership:** Kevin — tutorial state machine + card, lobby toggles, results tally, sourcing/generating WAVs. Gary — AudioBank spatial playback, popups, FX polish, reduce-motion in FX/motion.
-
-**Sonnet instructions (M7):**
+**Sonnet instructions (M7a):**
 ```text
 [paste shared preamble first]
 
-Milestone M7 — audio, score popups, onboarding tutorial, accessibility. Read plan §5 (all), §7, §8.3.
+Milestone M7a — audio & music system (Polish & feedback tier). Paste and follow the full prompt in
+docs/sound-design.md §8 ("M7-audio"), with one path change: the source WAVs are in the repo at
+docs/audio/sfx/ and docs/audio/music/ (not store media/audio/); copy them to
+pew/PewPew/Resources/Audio/SFX/ and .../Music/ unchanged. docs/sound-design.md supersedes plan §5.5
+and visual-design-spec §6 for all audio. Do not touch tutorial flow (M8) or visual polish (M7b).
+```
 
-1. Arena/AudioBank.swift: preload every WAV in Resources/Audio (names in §5.5) when the Arena opens
-   (async; use `try await AudioFileResource(named:)` if available, else AudioFileResource.load(named:)).
-   play(_ name, at entity) for spatial (entity has SpatialAudioComponent(gain: -6)); playUI(_ name)
-   from an entity attached to the HUD with ChannelAudioComponent. Map GameEvents → sounds:
-   targetSpawned→spawn (at target), targetHit→hit or bullseye (at target), targetExpired→expire,
-   missedShot→miss (at ray end, from InputCoordinator), fire→pew (at hand), countdownTick→count,
-   go→go, finalSecondsTick→tick, roundEnded→end. If WAVs are missing, log once and stay silent.
-2. HitFX: score popup = MeshResource.generateText("+150", font .systemFont(ofSize: 0.05, weight:
-   .heavy)) UnlitMaterial bullseyeGold, centered, rises 0.12 m over 0.6 s then removed;
-   "BULLSEYE +250" when ring == .gold. Pool 4. Under reduceMotion: no rise, 0.4 s then remove;
-   shards don't travel (flash + fade only).
-3. Tutorial (core, Kevin): implement TutorialStep flow per §7 and §8.3. start(now:) goes to
-   .tutorial(.touch) if !tutorialDone; startTutorial(now:) from "How to Play" returns to lobby when
-   done. Tutorial targets: spawn via SpawnDirector-independent requests (touch-size normal at 0.5 m
-   for step 1, blaster-size normal at 2 m for step 3), lifetime ∞, no scoring/stats. Steps 2–3 skipped
-   when controls == .touch or hand tracking unavailable. tutorialPoseDetected() called by
-   InputCoordinator when any hand reaches ARMED_COCKED during .gunPose. Tests for the flow.
-4. UI/TutorialCard.swift (glass, ~420×200 pt): step text from §7 (look & pinch variant), simple
-   2-frame pixel illustration for gun steps (two SF Symbols or a tiny drawn Canvas — no external art),
-   "Skip" button. Placed by PanelPlacer at 0.9 m / −20°.
-5. LobbyPanel: "How to Play" button; "Big Targets" toggle. Pass reduceMotion from
-   @Environment(\.accessibilityReduceMotion) into RoundConfig.
-6. ResultsPanel: numbers count up over 0.8 s with tick sound (skip under reduce motion).
+#### M7b — Feedback moments & accessibility (Sun Nov 22 – Wed Nov 25)
+**Scope:** the visual twins and UX in the table above: score popups, expire warning + expire FX, combo chip pop (and optional combo-break visual), session best + "NEW BEST" chip, results tally, final-seconds HUD pulse check, arena open/close fades, lock-on brackets pop with the `lock_on` cue, Big Targets, Reduce Motion, Increase Contrast.
+**Acceptance:** in one playtest round each feedback moment is seen/heard at least once; Reduce Motion and Increase Contrast change exactly the behaviors in visual spec §7; Big Targets enlarges targets and assist; no frame hitches on hit (pools prewarmed).
+**Ownership:** Gary — popups, expire FX, brackets, FX reduce-motion, arena transitions. Kevin — combo chip, session best, results tally, HUD final-seconds, lobby Big Targets toggle, reduce-motion plumbing into `RoundConfig`.
 
-Done when: first-run tutorial works on device for blaster and touch; all sounds play spatially;
-reduce motion and big targets work. Do NOT add music, voice, or persistence.
+**Sonnet instructions (M7b):**
+```text
+[paste shared preamble first]
+
+Milestone M7b — feedback moments & accessibility (Polish & feedback tier). M7a (audio) is merged.
+Follow docs/visual-design-spec.md §9 "M7" block items 1–3, 5 and 7 (popups, expire warning, bullseye
+HUD flash, results tally, accessibility); skip its item 4 (tutorial card → M8) and item 6 (audio →
+already done per docs/sound-design.md). Also:
+- AppModel keeps an in-memory sessionBest; ResultsPanel shows a "NEW BEST" chip (Press Start 2P 24 pt,
+  Gold) when beaten; the new_high_score cue already fires from M7a.
+- HUD combo chip pops on .comboChanged; a combo-break visual (chip shrinks out) is fine, but the
+  combo_break sound stays off by default.
+- Arena open: lobby panel appears (opacity/scale per visual spec §5.3) after preload/arena_open.
+  Exit: panels fade out over 0.3 s while arena_close plays, then dismiss.
+- LobbyPanel: Big Targets toggle; pass @Environment(\.accessibilityReduceMotion) into RoundConfig.
+Do NOT: build the tutorial, add new sounds, persist scores, or change scoring rules.
 ```
 
 ---
 
-### M8 — Freeze & demo (Fri Nov 27 – Mon Nov 30)
+### M8 — Tutorial & demo (post-core; Tue Nov 24 – Thu Nov 26)
+
+**Goal:** a first-timer learns to poke and finger-gun in ≤ 30 s without spoken help. Post-core tier: starts after MUST-2 and the Goal tier are on track, never delays them, and is cut before Goal items (§12.2). Outline level; the step design is §7, the card look is visual spec §5.3 "Tutorial card".
+
+**Rough flow:** first Start (or "How to Play") → **Touch** step (poke a near target) → **Gun pose** step (reticle appears when cocked) → **Fire** step (hit a target at 2 m) → "Nice!" → countdown (or back to lobby from How to Play). Skippable at any time; steps 2–3 skipped in Touch / Look & Pinch; `tutorial_success` per step; lobby music ducked.
+
+**Acceptance:** two people who have never used PewPew finish in ≤ 40 s unaided and then play a Blaster round; Skip works from every step; the tutorial never auto-repeats after the first run; no score/stats recorded.
+
+**Stretch — attract / demo mode:** self-playing round behind the idle lobby using the autoplay bot (§7). Only if every row is green Wed Nov 25; otherwise post-demo.
+
+**Ownership:** Kevin — `GameSession` tutorial phases + tests, `TutorialCard`, How to Play. Gary — tutorial target placement, `tutorialPoseDetected()` from InputCoordinator, card placement 0.9 m / −20°.
+
+**Sonnet instructions (M8):**
+```text
+[paste shared preamble first]
+
+Milestone M8 — tutorial (post-core tier). Read plan §7, §8.2, §8.3 and docs/visual-design-spec.md §5.3
+"Tutorial card" (mockup docs/visual/countdown-and-tutorial.png).
+1. GameSession: implement the TutorialStep flow and transitions in §8.3 (first-run start → tutorial;
+   How to Play → tutorial → lobby; skip; never auto-repeat). Tutorial targets are SpawnDirector-
+   independent (touch-size at 0.5 m, blaster-size at 2 m), lifetime ∞, no score/stats. Steps 2–3
+   skipped for Touch controls or no hand tracking. Emit .tutorialAdvanced per step. Swift Testing
+   tests for the flow.
+2. InputCoordinator calls tutorialPoseDetected() when any hand reaches ARMED_COCKED in .gunPose.
+3. UI/TutorialCard.swift per the visual spec (pixel hand frames, pips, copy from §7, Skip), placed by
+   PanelPlacer at 0.9 m / −20°. LobbyPanel "How to Play" button.
+Do NOT build attract mode, change scoring, or add sounds (tutorial_success and the duck are M7a hooks).
+```
+
+**Sonnet instructions (Stretch — attract mode, only if green Wed Nov 25):**
+```text
+[paste shared preamble first]
+
+Stretch — lobby attract mode. Read plan §7 "Attract / demo mode". Extract the autoplay bot's decision
+logic into a release-safe AttractDirector (Debug/AutoplayBot stays DEBUG-only and reuses it). After
+~20 s of lobby idle, run a scoreless demo round behind the lobby panel (normal spawn + hit FX, SFX
+muted, lobby music continues); stop instantly on any pinch, panel interaction or hand raised toward
+the panel, removing all demo targets. Never records stats or sessionBest. Off in DEBUG autoplay tests.
+```
+
+---
+
+### M9 — Freeze & demo (Fri Nov 27 – Mon Nov 30)
 
 **Goal:** a stable, rehearsed demo build that can't expire.
 
@@ -1217,21 +1291,21 @@ reduce motion and big targets work. Do NOT add music, voice, or persistence.
 - Sat Nov 28: full device test checklist (§13) in the actual demo room if possible (lighting matters for hand tracking).
 - **Sun Nov 29 demo freeze:** tag `v1.0-demo` on `main`; Release build installed on the Vision Pro.
 - **Mon Nov 30:** fresh install (free provisioning: this resets the 7-day clock to Dec 7), rehearse twice, charge battery, record a backup screen capture (visionOS Control Center → Record My View) of a full round as a fallback video.
-- Demo script (2–3 min): Launcher → Enter Arena → lobby explained in one sentence → tutorial (gun steps) → 30 s Blaster round on Normal Stay Put → results walkthrough → Play Again in Roam Room (if M6 landed) → Exit.
+- Demo script (2–3 min): Launcher → Enter Arena → lobby explained in one sentence → tutorial (gun steps; if M8 was cut, presenter explains with the static How to Play card) → 30 s Blaster round on Normal Stay Put → results walkthrough → Play Again in Roam Room (if M6 landed) → Exit.
 - README final: build, deploy (personal team), play, troubleshooting (re-sign after 7 days; Developer Mode; hand tracking permission).
 
-**Sonnet instructions (M8):**
+**Sonnet instructions (M9):**
 ```text
 [paste shared preamble first]
 
-Milestone M8 — freeze. No new features. Tasks:
+Milestone M9 — freeze. No new features. Tasks:
 1. Remove or #if DEBUG-guard every debug UI, print, and M*-TEMP marker; ensure a Release build has
    no Debug panel, Gesture Lab, or plane visualizers.
 2. Fix compiler warnings where trivial; do not refactor.
 3. Update README.md: requirements, build & deploy with a personal Apple ID team (profiles expire after
    7 days → redeploy), Wi-Fi pairing, Developer Mode, permissions, how to play, known limitations
    (simulator uses Look & Pinch; hand tracking needs good lighting), troubleshooting.
-4. Add docs/demo-script.md with the 2–3 minute script from plan §10/M8.
+4. Add docs/demo-script.md with the 2–3 minute script from plan §10/M9.
 Report any bug you notice instead of fixing it if the fix touches more than one file.
 ```
 
@@ -1244,6 +1318,7 @@ Report any bug you notice instead of fixing it if the fix touches more than one 
 | Round | `lengths` | [30, 60] s | default 30 |
 | Round | `countdownStep` / `goDuration` | 1.0 s / 0.5 s | 3·2·1·GO = 3.5 s |
 | Round | `finalWarnSeconds` | 5 | gold + tick |
+| Round | `finalTickFrom` | 10 | `.finalSecondsTick` n = 10…1; intense music at 10 (M7a) |
 | Round | `resultsDelay` | 0.6 s | after whistle |
 | Spawn | `firstDelay` | 0.4–0.9 s | after GO |
 | Spawn | `delay` Easy / Normal / Hard | 0.6–1.4 / 0.35–1.10 / 0.25–0.80 s | after resolution |
@@ -1302,7 +1377,7 @@ Report any bug you notice instead of fixing it if the fix touches more than one 
 | FX | spawnPop / hitFlash / shards / popup / expire | 0.15 / 0.04 / 0.35 (10 × 2 cm, 0.25 m) / 0.6 (rise 0.12 m) / 0.2 s | |
 | FX | muzzle / tracer / reticleKick / reticleAngle | 0.06 / 0.07 / 0.12 s / 1.2° | |
 | FX | beam | 2 mm × 0.6 m, opacity 0.35 | |
-| Audio | spatial gain | −6 dB | |
+| Audio | spatial gain | −6 dB | all other audio/music values: `docs/sound-design.md` §1–§3 |
 
 ---
 
@@ -1319,20 +1394,24 @@ Report any bug you notice instead of fixing it if the fix touches more than one 
 | Swift concurrency errors stall Sonnet | Med / Med | Swift 5 mode in app; explicit @MainActor | Don't fight warnings; annotate |
 | API not in SDK (cylinder, extent, attachments) | Low / Low | Fallbacks listed inline | Use fallback, note in PR |
 | Comfort: neck strain / walking hazards | Low / Med | Band limits, HUD −18°, Roam safety copy, mixed immersion | Default Stay Put for demo |
-| Schedule slip (Gary overloaded M1+M4a+M3) | Med / High | Kevin takes PanelPlacer if M3 slips; M6 is cuttable | See cut list |
+| Schedule slip (Gary overloaded M1+M4a+M3) | Med / High | Kevin takes PanelPlacer if M3 slips; everything after Nov 19 is cuttable | See cut list |
+| Post-gate squeeze (M5/M6/M7a/M7b/M8 in Nov 20–26) | High / Med | Strict tiers; Must never trades scope for polish | Apply §12.2 from the top at each Tue/Thu sync |
 
-### 12.2 Cut list (cut in this order; never cut the Must list)
-1. M6 surface placement entirely (Roam = air-spawn) — **first cut**, decide Tue Nov 24.
-2. Hard difficulty (keep Easy/Normal).
-3. Moving targets (keep Normal/Small).
-4. Roam Room mode (keep Stay Put; toggle hidden).
-5. Results tally animation, combo badge pop, score popups.
-6. Tutorial steps 2–3 (replace with a static card "Finger-gun, drop thumb to shoot").
-7. Spatial audio → plain UI sounds.
-**Never cut:** timed 30/60 loop, touch, lobby/HUD/results stats, single-shot finger-gun, 8-bit targets.
+### 12.2 Cut list (cut in this order, lowest tier first; never cut the Must list)
+1. **Stretch** — attract mode and everything in §12.3 (never started unless all green Wed Nov 25).
+2. **M8 Tutorial & demo** → fall back to a static How to Play card ("Poke targets. Finger-gun, drop thumb to shoot.") and the presenter explains. Decide Tue Nov 24.
+3. **M6** surface placement entirely (Roam = air-spawn) — decide Tue Nov 24.
+4. M7b nice-to-haves: arena open/close fades, lock-on cue + brackets pop, expire warning blink, combo-break visual.
+5. Session best ("NEW BEST" + `new_high_score`) and the final-10 s intense music switch (round loop keeps playing).
+6. Hard difficulty (keep Easy/Normal).
+7. Moving targets (keep Normal/Small).
+8. Roam Room mode (keep Stay Put; toggle hidden).
+9. Results tally animation, combo chip pop, score popups.
+10. Music entirely (SFX stay), then spatial emitters → plain UI sounds for everything.
+**Never cut:** timed 30/60 loop, spawn, touch, scoring, lobby/HUD/results stats, single-shot finger-gun, 8-bit targets.
 
-### 12.3 Stretch (only after Nov 26 if all green; otherwise post-demo)
-High score (`@AppStorage` best per length/controls), decoy targets, music bed, grade badge (S/A/B/C), scene-reconstruction safety, gun skin (reticle/beam color variants), voice fire.
+### 12.3 Stretch (only if all green Wed Nov 25; otherwise post-demo)
+**Attract / demo mode** (§7, M8), persistent high score (`@AppStorage` best per length/controls), decoy targets, grade badge (S/A/B/C) + grade jingles, streak "coin ladder" hit pitches, hands-lost chime, scene-reconstruction safety, gun skin (reticle/beam color variants), voice fire. (Music moved to the Goal tier in M7a.)
 
 ---
 
@@ -1368,8 +1447,10 @@ High score (`@AppStorage` best per length/controls), decoy targets, music bed, g
 
 **Feel / comfort / a11y**
 - [ ] Every sound plays from the right place; no hitch on hit.
+- [ ] (M7a) Music: lobby → silent countdown → round → intense at 10 s → whistle → sting; Music toggle mutes it.
+- [ ] (M7b) Combo chip, expire warning, results tally and NEW BEST each show up in a round.
 - [ ] Reduce Motion and Big Targets work.
-- [ ] Two first-timers finish the tutorial unaided.
+- [ ] (M8) Two first-timers finish the tutorial unaided.
 - [ ] 3 consecutive rounds: no crash, no thermal warning, battery noted.
 
 ---
@@ -1386,7 +1467,9 @@ High score (`@AppStorage` best per length/controls), decoy targets, music bed, g
 | M4b | Fire, HitMath shots, FX, blaster band, tuning | Blaster toggle/default, shots stats, gate protocol | `registerHit` / `registerMissedShot` from blaster |
 | M5 | Motion system, Roam placement | Weights, difficulty, lobby pickers | `SpawnRequest.motion`, `RoundConfig.space` |
 | M6 | Planes, surface placement, plane debug | Denied-sensing copy | `PlacementService` fallback |
-| M7 | AudioBank, popups, FX a11y | Tutorial flow + card, toggles, tally, WAVs | `GameEvent` → audio; `tutorialPoseDetected()` |
-| M8 | Device tests, fresh install | README, demo script, debug cleanup | Tag `v1.0-demo` |
+| M7a | AudioBank, emitter pool, hand/ray/lock-on cues | `SoundCue` + tests, MusicDirector, Music toggle, asset copy | `GameEvent` → `SoundCue` → audio/music |
+| M7b | Popups, expire FX, brackets, arena fades, FX a11y | Combo chip, session best, tally, HUD final seconds, Big Targets, reduce-motion plumbing | `.comboChanged`, `newSessionBest` |
+| M8 | Tutorial targets, pose hook, card placement | Tutorial flow + tests, card, How to Play | `tutorialPoseDetected()`, `.tutorialAdvanced` |
+| M9 | Device tests, fresh install | README, demo script, debug cleanup | Tag `v1.0-demo` |
 
 Rule of thumb: Kevin never edits `Arena/`, `Tracking/`, `Interaction/`, `Placement/`, `GestureCore/`; Gary never edits `UI/` or `GameCore/` except `Tuning.swift` gesture rows and the M1 stub — both via PR reviewed by the other.
