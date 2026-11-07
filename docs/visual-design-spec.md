@@ -22,6 +22,10 @@ The room backdrop is AI-generated. Inter stands in for SF Pro in the mockups.
 
 **Image location:** the mockups and sprites live in [`docs/visual/`](visual/) and [`docs/visual/sprites/`](visual/sprites/), next to this doc. The Sonnet prompts in §9 refer to them as `docs/visual/...`. They are reference images and are not app resources.
 
+**Changelog**
+- **Fri Nov 6, 2026 (evening) — menus + score popups after Gary's device test.** Launcher and in-Arena lobby rebuilt to §5.3 (the old Arena "menu" was the debug panel). Added results panel, countdown disc and HUD. Score popups (§4.4) now specified in full, including a combo line, and shipped. New §5.5: debug controls are hidden in player-facing builds. HUD moved above eye line while Touch is the only mode (§5.3). Primary buttons draw their own Button Red fill (§5.4). Press Start 2P is bundled.
+- Fri Nov 6, 2026 — v1.
+
 The Swift snippets in §3 and §8 weren't compiled here (no Swift toolchain in this environment). `PixelTargetMap` follows the reference generator that produced the golden map exactly, so treat compile errors as typos, not design changes.
 
 ---
@@ -47,7 +51,7 @@ The Swift snippets in §3 and §8 weren't compiled here (no Swift toolchain in t
 | 5 | 8 mm mint sphere armed indicator | **8 mm mint cube**, slow spin | Matches the pixel/voxel language (shards are cubes too). |
 | 6 | Beam 2 mm × 0.6 m at 35 % | Beam **2.5 mm, 3 × 0.2 m segments at 60 / 35 / 15 %** | 35 % mint disappears on bright walls. A fading beam points without drawing a hard line to infinity. |
 | 7 | Tracer 1.5 mm, 70 ms | Tracer **4 mm, 90 ms**, thins to 25 % width while fading | 1.5 mm at 2.5 m is about one display pixel, so it's invisible. |
-| 8 | Popup "+150" Gold 3D text for all | **Press Start 2P 3D text on an Ink "score tag" plate**. Color by ring: none = Paper, red = Target Red, bullseye = Gold (+ Gold tag border, 2 lines). Sized by angle, not meters. | One color for all wastes the ring signal. The storyboard showed light text on a white wall needs a plate; a drop shadow alone failed. |
+| 8 | Popup "+150" Gold 3D text for all | **Press Start 2P 3D text on an Ink "score tag" plate**. Color by ring: none = Paper, red = Target Red, bullseye = Gold (+ Gold tag border, "BULLSEYE" line). Combo hits add a small "×1.5" / "×2" line. Sized by angle, not meters. | One color for all wastes the ring signal. The storyboard showed light text on a white wall needs a plate; a drop shadow alone failed. |
 | 9 | Shards via `Entity.move(to:)` | Shards via **per-frame physics in `ArenaController.updateFX(now:)`** (velocity + gravity + spin + shrink), counts by ring (10 / 14 / 20) | `move(to:)` gives straight lines. A tiny integrator gives arcade arcs, costs nothing for ≤ 48 entities, and the frame driver already exists (plan §6.4). |
 | 10 | Spawn scale 0 → 1.1 → 1.0 | Spawn **0.6 → 1.12 → 1.0** + **Paper ping ring** | Plan §3.4 counts reaction time from the frame the target is visible at 60 % scale, so the animation must start at 0.6. The ping ring helps peripheral spotting (Roam). |
 | 11 | Expire: tint gray + shrink | Adds an **expire warning**: last 0.6 s swaps gray/normal every 150 ms | Visual only, no rule change. It's fairer and very arcade; kids learn "hurry". Kept under 3.3 Hz for photosensitivity. |
@@ -327,12 +331,26 @@ Rule: **never draw a pixel smaller than ~3 display px.** That holds for every co
 - **Reduce Motion:** shards don't move or spin; they appear in place and shrink over half the life.
 - `ParticleEmitterComponent` is **not** used for MVP. Stretch only: a bullseye sparkle burst using a 2×2-pixel square image, `isLightingEnabled = false`, burst 24, if the team wants extra polish after M7.
 
-### 4.4 Popups ("score tags")
-- **Text:** `MeshResource.generateText("+170", extrusionDepth: 0.0015, font: UIFont(name: "PressStart2P-Regular", size: em) ?? .systemFont(ofSize: em, weight: .heavy))`, centered via `mesh.bounds`, `UnlitMaterial` in the ring color.
-- **Plate:** `generatePlane(width: textW + 0.6·em, height: textH + 0.5·em, cornerRadius: 0.12·em)`, Ink at 90 % opacity, 1 mm behind the text. Bullseye adds a second plate 0.15·em larger in Gold behind it (the border).
-- **Size by angle:** `em = 2·d·tan(θ/2)` with θ = **1.2°** for normal and red, and θ = 1.6° for the bullseye "+N" line (the "BULLSEYE" line is 0.55×). At 3 m, em is 6.3 cm; at 0.5 m, 1 cm.
-- **Motion:** appears at the target center + 3 cm toward the viewer at hit + 40 ms. Scale 0.6 → 1.1 (60) → 1.0 (60). Rises **0.04·d** (12 cm at 3 m) over 600 with ease-out cubic. Fades out over the last 150. Billboard toward the head. Pool of 4. Reduce Motion: no rise, no pop, removed after 400.
-- **Content:** "+N" where N = outcome points. When the multiplier is > 1, the HUD chip carries it; the tag stays single-number (the bullseye gets the extra line).
+### 4.4 Popups ("score tags") — shipped in `pew/PewPew/Arena/ScorePopups.swift`
+**Source of truth:** the `HitOutcome` returned by `GameSession.registerHit`. The session passes it to `ArenaRendering.removeTarget(_:reason: .hit(outcome))`, and `ArenaController` spawns the tag there from the target's world position. No other code path creates popups, so look-pinch, touch, debug and autoplay hits all get the same tag.
+
+**Variants** (lines top to bottom; `em` = the base size below):
+
+| Variant | When | Lines | Text color | Plate |
+| --- | --- | --- | --- | --- |
+| Outer | ring `.none` (ρ > 0.40, and assisted hits ρ ≥ 1) | "+N" at 1.0 em | Paper | Ink 90 % |
+| Red | ring `.red` (0.20 < ρ ≤ 0.40) | "+N" at 1.15 em | Target Red | Ink 90 % |
+| Bullseye | ring `.gold` (ρ ≤ 0.20) | "BULLSEYE" at 0.73 em, "+N" at 1.33 em (= 1.6° / 1.2°) | Gold, both lines | **Opaque** Ink (at 90 % the Gold border tinted it olive) + **Gold border plate** 0.15 × line scale larger on each side |
+| Combo (adds to any of the above) | `outcome.multiplier > 1` | extra bottom line "×1.5" or "×2" at 0.55 × the "+N" size | Paper for ×1.5, Gold for ×2 (same colors as the HUD chip) | — |
+
+Examples: a plain outer hit reads `+100`; a red hit on a ×2 streak reads `+340` / `×2`; a bullseye on ×1.5 reads `BULLSEYE` / `+270` / `×1.5`.
+
+- **Text:** `MeshResource.generateText(text, extrusionDepth: 0.03, font: UIFont(name: "PressStart2P-Regular", size: 1) ?? .systemFont(ofSize: 1, weight: .heavy))`, built at **unit em** and centered via `mesh.bounds`; `UnlitMaterial` in the line color. The whole tag is scaled by `em`, so one mesh serves every distance.
+- **Plate:** `generatePlane(width: maxLineW + 0.6, height: linesH + 0.5, cornerRadius: 0.12)` (× the "+N" line scale), Ink `UnlitMaterial` with `.transparent(opacity: 0.9)`, text 0.01 em in front. Line gap 0.35 em.
+- **Size by angle:** `em = 2·d·tan(θ/2)`, θ = **1.2°** (`Tuning.FX.popupAngleDeg`), d = head-to-target distance. At 3 m, em is 6.3 cm; at 0.5 m (Touch), 1.0 cm.
+- **Timing** (all from `Tuning.FX`): hidden for the first 40 ms (`hitFlash`, so the target flash reads first) → visible at the target center + 3 cm toward the head. Scale 0.6 → 1.1 (60 ms, ease-out) → 1.0 (60 ms). Rises **0.04·d** (2 cm at 0.5 m, 12 cm at 3 m) over `popupLife` 600 ms with ease-out cubic. Opacity 1 → 0 over the last `popupFadeOut` 150 ms. `BillboardComponent` keeps it facing the viewer.
+- **Reduce Motion:** no pop and no rise; life `popupReducedMotionLife` 400 ms, still fading over the last 150 ms.
+- **Budget:** a pool of `popupPoolSize` = 4 slots (root + plate + border + 3 line entities each), built at Arena open. A fifth simultaneous hit recycles the oldest slot. Text and plate meshes are cached per string / layout, so a repeat score allocates nothing; the per-frame update only writes transforms and an `OpacityComponent` when opacity moves by > 1 %.
 
 ---
 
@@ -375,36 +393,55 @@ Rule: **never draw a pixel smaller than ~3 display px.** That holds for every co
 
 ### 5.3 Layouts (see the mockups for the exact look)
 
-**Launcher window** (520×380 pt, normal window): 56 pt face icon + wordmark centered; tagline "Hit the targets. Beat the clock." 20 pt secondary; **ENTER ARENA** primary (full width minus 48 pt, 68 pt tall); footnote "Uses hand tracking. Best in a clear, well-lit space." 17 pt secondary; error text (plan M0) 17 pt in `.red` system style.
+Screens are attachments inside the Arena (plan §1.1): `menu` (lobby or results, by phase), `countdown`, `hud`, and the DEBUG-only `debug`. `ArenaView` enables exactly one of menu / countdown+HUD / HUD per phase. Implemented in `pew/PewPew/UI/{LauncherView,LobbyPanel,ResultsPanel,PlayHUD,PixelViews}.swift`. Simulator screenshots of the shipped screens (visionOS 26.1 simulator, Debug build) are in [`docs/visual/screenshots/`](visual/screenshots/) (1280 px copies; full-size originals in the Project store's `media/visual/screenshots/`): `launcher-window.png`, `start-menu-lobby.png`, `start-menu-how-to-play.png`, `hud-in-round.png`, `results-panel.png`, `score-popups-all-variants.png`, `score-popups-closeup.png`, `debug-panel-shown.png`.
 
-**Lobby** (600×700 pt, 1.2 m, −8°, corner radius 46, padding 36/40) — `lobby-panel.png`:
+**Launcher window** (520×380 pt, system window glass) — the only 2D window; it closes when the Arena opens:
+1. Wordmark row centered: 56 pt face icon + "PEWPEW" Press Start 2P 56 pt, Target Red, 4 pt hard Ink shadow, gap 18.
+2. Tagline "Hit the targets. Beat the clock." SF 20 semibold, secondary, 16 below.
+3. Flexible space (≥ 24).
+4. **ENTER ARENA** primary (full width minus 48 pt, 68 pt). While opening it reads "OPENING" and is disabled at 50 % opacity.
+5. Footnote 17 pt, 16 below: `hand.raised.fill` + "Uses hand tracking. Best in a clear, well-lit space." in secondary. If opening fails, this slot shows `exclamationmark.triangle.fill` + "Couldn't open the arena. Try again." in system red instead (one line, never both).
+
+**Lobby / start menu** (600 pt wide, height hugs content, 1.2 m, −8°, corner radius 46, padding 36/40) — `lobby-panel.png`. Only the rows whose features exist are shown; the rest join as their milestones land:
 1. Header row: 52 pt face icon + "PEWPEW" wordmark 48 pt, gap 18.
 2. Tagline 20 pt secondary, 12 below.
-3. Settings rows, gap 14: label column 130 pt (SF semibold 20) + segmented picker 370 pt. The rows are Round `30 s | 60 s`, Controls `Blaster | Touch`, Space `Stay Put | Roam Room` (caption 17 pt secondary under it with the plan §3.7 copy, plus denied-sensing text), Difficulty `Easy | Normal | Hard`, and Big Targets `Toggle`.
-4. Banner slot (only when needed) above the rows: glass-inset capsule, `info.circle` + plan §2.8 Look & Pinch copy, 17 pt.
-5. Pixel divider.
+3. Banner (only without hand tracking, e.g. the simulator), 24 below: black-18 % rounded rect (radius 22), `info.circle` + "Hand tracking is off, so you're using Look & Pinch: look at a target and pinch to hit it." 17 pt.
+4. Settings rows, 32 below, gap 14: label column 130 pt (SF semibold 20) + segmented picker filling the rest (`.controlSize(.large)`). Shipped rows: **Round** `30 s | 60 s` and **Space** `Stay Put | Roam Room`, with the plan §3.7 caption under the picker ("Stay in one spot" / "Walk around — clear some space first"), 17 pt secondary. To come: Controls `Blaster | Touch` (M4), Difficulty (M5), Big Targets toggle (M7b), Music toggle (M7a), in the mockup's order.
+5. Pixel divider, 24 above and below.
 6. **START** primary, full width, 68 pt.
-7. Footer: **How to Play** (`.bordered`, 60 pt) left, **Exit Arena** (`.borderless`, secondary) right. DEBUG builds add a small "Debug" borderless button in the footer center.
+7. Footer, 16 below: **How to Play** (`.bordered` capsule, 60 pt) left, **Exit Arena** (`.borderless`, secondary, 20 pt) right. DEBUG builds only: a "Debug" / "Hide Debug" borderless button, 17 pt tertiary, centered (§5.5).
+8. **How to Play** swaps the panel content in place (no new window): face icon 40 + "HOW TO PLAY" pixel 24 Paper; four rows, SF Symbol 22 pt + SF 20 copy, 24 apart (poke a target / aim for the middle / combos / look & pinch); pixel divider; full-width **Back** `.bordered` with `chevron.left`. It's the static card from plan §7 until the M8 tutorial replaces it.
 
-**Countdown** (1.6 m, eye height, arena forward) — `countdown-and-tutorial.png`: a 300 pt glass disc with a 160 pt Gold digit (10 pt Ink hard shadow). Each digit scales 1.3 → 1.0 over 200 with `count`. GO! uses a 360×200 pt capsule for 0.5 s, scaling 1.0 → 1.25 and fading over the last 150, with `go`.
+Sounds: `ui_tap` on START, PLAY AGAIN, ENTER ARENA, How to Play and a Round pick; `ui_toggle_on`/`off` on the Space picker (Roam = on) and the Debug toggle; `ui_back` on Back, Menu and Exit Arena (`pew/PewPew/UI/UISound.swift`, `AVAudioPlayer`, until the M7a AudioBank takes over).
+
+**Countdown** (1.6 m, eye height, arena forward) — `countdown-and-tutorial.png`: a 300 pt glass disc with a 160 pt Gold digit (10 pt Ink hard shadow). Each digit scales 1.3 → 1.0 over 200 with `count`. GO! uses a 360×200 pt capsule (96 pt pixel text) for 0.5 s, scaling 1.0 → 1.25 and fading over the last 150, with `go`. Shipped: disc, digits and GO! capsule; the pop, fade and sounds are M7.
+
+**HUD placement while Touch is the only mode:** 1.3 m ahead, **10° above** eye line, facing the head. Touch targets fill the band 5–40° below eye line at 0.5 m, so the spec's −18° slot sat directly behind them. Move it back to the lazy-follow −18° slot below once Blaster mode ships (its targets are at −10°…+15°).
 
 **HUD** (460×128 pt, radius 40, padding 0/30, lazy-follow 1.1 m, −18°, `allowsHitTesting(false)`) — `hud-in-room.png`: left is TIME (SF bold 17, tracking 1.5, secondary) over a 64 pt pixel time, two digits zero-padded ("04"). Then a 2 pt white-18 % divider, 80 pt tall. Right is SCORE label + combo chip (right-aligned on the label row) over the 32 pt pixel score. The hint is a **separate** glass capsule 16 pt below the HUD (SF semibold 22) so the HUD never resizes. The hint fades in/out over 200.
 
-**Results** (640×600 pt, 1.2 m, −8°, radius 46) — `results-panel.png`: header 30 pt face icon + "ROUND OVER" 24 pt pixel. Hero: "SCORE" label (SF bold 17, tracking 2) above a 64 pt Gold pixel score. Chips row: length · controls · space · difficulty (SF semibold 17 in white-12 % capsules). Stat grid 3×2, gap 12, tiles black-20 % with radius 22 and padding 14/16: Hits "14 / 17", Accuracy "74 %", Avg reaction "612 ms", Fastest "431 ms", Best streak, Bullseyes (number in Gold, mini face icon). "Shots fired: N" (Blaster only) is 17 pt secondary. Buttons: **PLAY AGAIN** primary (flex 1.4) and **Menu** `.bordered` (flex 1), both 68 pt. Tally: numbers count up over 800 with `tally` ticks (≤ 12 ticks, evenly spaced); static under Reduce Motion. Panel appear: opacity 0 → 1, scale 0.94 → 1.0 over 200 (opacity only under Reduce Motion).
+**Results** (640×600 pt, 1.2 m, −8°, radius 46) — `results-panel.png`: header 30 pt face icon + "ROUND OVER" 24 pt pixel. Hero: "SCORE" label (SF bold 17, tracking 2) above a 64 pt Gold pixel score. Chips row: length · controls · space · difficulty (SF semibold 17 in white-12 % capsules). Stat grid 3×2, gap 12, tiles black-20 % with radius 22 and padding 14/16: Hits "14 / 17", Accuracy "74 %", Avg reaction "612 ms", Fastest "431 ms", Best streak, Bullseyes (number in Gold, mini face icon). "Shots fired: N" (Blaster only) is 17 pt secondary. Buttons: **PLAY AGAIN** primary (flex 1.4) and **Menu** `.bordered` (flex 1), both 68 pt. Tally: numbers count up over 800 with `tally` ticks (≤ 12 ticks, evenly spaced); static under Reduce Motion. Panel appear: opacity 0 → 1, scale 0.94 → 1.0 over 200 (opacity only under Reduce Motion). Shipped: header, hero score, a length · space chip, the 3×2 grid and both buttons (Menu is 170 pt wide). Still to do: controls/difficulty chips, the bullseye mini icon, tally and appear animations.
 
 **Tutorial card** (460×200 pt, 0.9 m, −20°, radius 36, padding 22/26) — `countdown-and-tutorial.png`: on the left, a 96 pt two-frame pixel hand sprite (`hand_a` thumb up / `hand_b` thumb down + gold flash) swapping every 500 (static frame A under Reduce Motion; step 1 uses the face icon instead). On the right: 3 step pips (12 pt squares; done = Paper, current = Gold, todo = white-28 %), copy from plan §7 in SF Pro Rounded heavy 28, then "Step n of 3" 17 pt secondary + **Skip** `.bordered` 17 pt, 44 pt tall. On success, a 300 ms check: the card's pips fill, then the next step.
 
 ### 5.4 Button styles
+Primary (START, PLAY AGAIN, ENTER ARENA) uses `PrimaryPixelButtonStyle` in `pew/PewPew/UI/PixelViews.swift`, applied with `.primaryPixelButton()`: a solid `buttonRed` capsule, 68 pt tall, white Press Start 2P 24 pt label, a 2 pt white-18 % inner stroke, 0.97 press scale, 50 % opacity when disabled, and the system `.hoverEffect(.highlight)` on a capsule content shape (so gaze hover still works).
 ```swift
-Button("START") { ... }
-    .font(Theme.Fonts.pixel(24))
-    .buttonStyle(.borderedProminent)
-    .buttonBorderShape(.capsule)
-    .controlSize(.extraLarge)
-    .tint(Theme.Palette.buttonRed.color)
-    .frame(maxWidth: .infinity, minHeight: Theme.Metrics.primaryButtonHeight)
+Button(action: start) { Text("START").frame(maxWidth: .infinity, minHeight: 44) }
+    .primaryPixelButton()
 ```
-Secondary: `.buttonStyle(.bordered)`, `.font(.system(size: 20, weight: .semibold))`, minimum height 60. Tertiary (Exit Arena): `.buttonStyle(.borderless)`, `.foregroundStyle(.secondary)`. Hit areas are ≥ 60 pt everywhere (plan M3).
+Why not `.borderedProminent` + `.tint(buttonRed)`: on visionOS glass the system lightens the tint to a washed-out salmon (seen in the visionOS 26 simulator), which loses the palette's red. This is the one allowed custom `ButtonStyle`; it keeps the hover effect, per §5.1.
+Secondary: `.secondaryButton()` = `.buttonStyle(.bordered)`, capsule, `.controlSize(.large)`, SF 20 semibold, minimum height 60. Tertiary (Exit Arena): `.buttonStyle(.borderless)`, `.foregroundStyle(.secondary)`. Hit areas are ≥ 60 pt everywhere (plan M3).
+
+### 5.5 Debug controls are never player-facing
+- Test tools (the debug panel, autoplay, hit injectors, launch flags) live in `pew/PewPew/Debug/` and are wrapped in `#if DEBUG`, so **Release and TestFlight builds don't contain them at all**.
+- In DEBUG builds (what Xcode installs on a device) they are **hidden by default**. The only entry point is the small tertiary "Debug" button in the lobby footer. It shows a separate `debug` panel to the right of the play area (0.62 m right, 1.0 m ahead), which has its own **Hide** button so it can be dismissed mid-round.
+- Debug panel buttons and what they do: **Autoplay: on/off** (a bot hits about 75 % of targets after 0.45–1.3 s at random ρ 0–0.8 and fires an occasional miss), **Expire all** (times out every live target), **Hit outer** (hits the nearest target at ρ 0.5: no ring bonus), **Hit bullseye** (nearest target at ρ 0.1: gold ring), **Miss shot** (a missed shot, which breaks the combo). They only act during a round. The status line shows phase, time, score and multiplier.
+- Never put a debug control, debug label or test copy into the lobby, results, HUD or launcher layouts. Player-visible screens use only the elements in §5.3.
+- Simulator screenshot flags (DEBUG only, `pew/PewPew/Debug/LaunchFlags.swift`): `-PewEnterArena`, `-PewHowToPlay`, `-PewAutoplay`, `-PewShowDebug`, `-PewRoam`, `-PewPopupDemo` (holds one tag per variant above the lobby for 60 s).
+
+### 5.6 Fonts
+Press Start 2P (SIL OFL 1.1) ships at `pew/PewPew/Resources/Fonts/PressStart2P-Regular.ttf` with its license `PressStart2P-OFL.txt`, registered via `UIAppFonts` in `pew/PewPew/Info.plist`. `Theme.Fonts.pixel` falls back to SF Mono black if it fails to load.
 
 ---
 
@@ -698,8 +735,8 @@ pew/PewPew/Resources/Fonts/PressStart2P-Regular.ttf (UIAppFonts in pew/PewPew/In
 3. Typography per §5.2: Press Start 2P only for logo, countdown, HUD time/score, results hero score,
    headers, primary button labels, combo chip — multiples of 8 pt, ≥24 pt, uppercase/numbers.
    Everything else SF Pro ≥17 pt; stat numbers Theme.Fonts.number(34).
-4. Primary buttons: borderedProminent, capsule, controlSize .extraLarge, tint Theme.Palette.buttonRed,
-   pixel 24 pt label, 68 pt tall. Never tint buttons with targetRed.
+4. Primary buttons: .primaryPixelButton() from PixelViews.swift (spec §5.4: solid buttonRed capsule,
+   pixel 24 pt label, 68 pt tall, system hover kept). Never tint buttons with targetRed.
 5. Hard shadows via .pixelShadow(): logo 4, results score 5, countdown 10.
 6. HUD: time zero-padded 2 digits; in final 5 s color bullseyeGold + pulse 1.0→1.08→1.0 (300 ms) on
    each tick; combo chip hidden at ×1, Paper chip ×1.5, Gold chip ×2, pop 1.3→1.0 (200 ms); hint is a
