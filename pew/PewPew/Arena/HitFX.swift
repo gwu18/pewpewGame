@@ -13,11 +13,14 @@ final class HitFX {
     private var spawns: [TargetID: SpawnAnim] = [:]
     private var hits: [TargetID: HitAnim] = [:]
     private var waves: [Wave] = []
+    private var departures: [TargetID: Departure] = [:]
+    private var grayShard: UnlitMaterial?
     private var lastTime: TimeInterval?
 
     func prepare(root: Entity, materials: TargetMaterials) {
         self.root = root
         self.materials = materials
+        grayShard = UnlitMaterial(color: Theme.Palette.missGray.uiColor)
         shards = (0..<fx.shardPoolSize).map { _ in
             let entity = ModelEntity(mesh: .generateBox(size: 1), materials: [materials.shards[0]])
             entity.isEnabled = false
@@ -55,9 +58,24 @@ final class HitFX {
         }
         spawns.removeAll()
         hits.removeAll()
+        departures.removeAll()
+        grayShard = nil
         lastTime = nil
         materials = nil
         root = nil
+    }
+
+    func stopAnimations() {
+        for spawn in spawns.values {
+            spawn.ping?.removeFromParent()
+        }
+        spawns.removeAll()
+        hits.removeAll()
+        departures.removeAll()
+        for index in shards.indices where shards[index].active {
+            shards[index].active = false
+            shards[index].entity.isEnabled = false
+        }
     }
 
     @discardableResult
@@ -77,11 +95,43 @@ final class HitFX {
         return true
     }
 
+    @discardableResult
+    func beginExpire(id: TargetID, entity: Entity, diameter: Float, gray: UnlitMaterial, at time: TimeInterval) -> Bool {
+        beginDeparture(
+            id: id,
+            entity: entity,
+            diameter: diameter,
+            at: time,
+            duration: fx.expireDuration,
+            drop: fx.expireDrop,
+            easeIn: true,
+            face: gray
+        )
+        emitExpireShards(from: entity, diameter: diameter)
+        return true
+    }
+
+    @discardableResult
+    func beginVanish(id: TargetID, entity: Entity, diameter: Float, at time: TimeInterval) -> Bool {
+        beginDeparture(
+            id: id,
+            entity: entity,
+            diameter: diameter,
+            at: time,
+            duration: fx.roundEndVanish,
+            drop: 0,
+            easeIn: false,
+            face: nil
+        )
+        return true
+    }
+
     func update(now: TimeInterval) -> Set<TargetID> {
         let dt = min(max(now - (lastTime ?? now), 0), 0.05)
         lastTime = now
         updateSpawns(now: now)
-        let finished = updateHits(now: now)
+        var finished = updateHits(now: now)
+        finished.formUnion(updateDepartures(now: now))
         updateShards(dt: Float(dt))
         updateWaves(now: now)
         return finished
@@ -272,6 +322,88 @@ final class HitFX {
         }
     }
 
+    private func beginDeparture(
+        id: TargetID,
+        entity: Entity,
+        diameter: Float,
+        at time: TimeInterval,
+        duration: TimeInterval,
+        drop: Float,
+        easeIn: Bool,
+        face: UnlitMaterial?
+    ) {
+        spawns[id]?.ping?.removeFromParent()
+        spawns[id] = nil
+        if let face, let model = entity.findEntity(named: "face") as? ModelEntity {
+            model.model?.materials = [face]
+        }
+        departures[id] = Departure(
+            entity: entity,
+            diameter: diameter,
+            start: time,
+            duration: duration,
+            drop: drop,
+            origin: entity.position,
+            easeIn: easeIn
+        )
+    }
+
+    private func updateDepartures(now: TimeInterval) -> Set<TargetID> {
+        var finished: Set<TargetID> = []
+        for (id, departure) in departures {
+            let duration = max(departure.duration, 0.001)
+            let t = min(max(Float((now - departure.start) / duration), 0), 1)
+            let eased = departure.easeIn ? t * t : t
+            departure.entity.scale = SIMD3(repeating: departure.diameter * (1 - eased))
+            departure.entity.position = departure.origin - SIMD3(0, departure.drop * eased, 0)
+            if t >= 1 { finished.insert(id) }
+        }
+        for id in finished {
+            departures.removeValue(forKey: id)
+        }
+        return finished
+    }
+
+    /// Visual spec: four gray shards, gravity only, 250 ms.
+    private func emitExpireShards(from entity: Entity, diameter: Float) {
+        guard let grayShard else { return }
+        let count = max(fx.expireShardCount, 1)
+        let size = fx.shardSizeRatio * diameter
+        for index in 0..<fx.expireShardCount {
+            let angle = Float(index) / Float(count) * 2 * .pi
+            let local = SIMD3<Float>(cos(angle) * 0.3, sin(angle) * 0.3, 0.01)
+            launchShard(
+                at: entity.convert(position: local, to: nil),
+                velocity: .zero,
+                size: size,
+                life: 0.25,
+                material: grayShard
+            )
+        }
+    }
+
+    private func launchShard(
+        at world: SIMD3<Float>,
+        velocity: SIMD3<Float>,
+        size: Float,
+        life: TimeInterval,
+        material: UnlitMaterial
+    ) {
+        guard let slot = shards.firstIndex(where: { !$0.active }) else { return }
+        shards[slot].active = true
+        shards[slot].velocity = velocity
+        shards[slot].axis = SIMD3(0, 1, 0)
+        shards[slot].age = 0
+        shards[slot].life = life
+        shards[slot].size = size
+        let entity = shards[slot].entity
+        entity.model?.materials = [material]
+        entity.position = world
+        entity.scale = SIMD3(repeating: size)
+        entity.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+        entity.isEnabled = true
+    }
+
     private func randomAxis() -> SIMD3<Float> {
         let axis = SIMD3<Float>(
             Float.random(in: -1...1),
@@ -311,5 +443,15 @@ final class HitFX {
         var entity: Entity
         var start: TimeInterval
         var diameter: Float
+    }
+
+    private struct Departure {
+        var entity: Entity
+        var diameter: Float
+        var start: TimeInterval
+        var duration: TimeInterval
+        var drop: Float
+        var origin: SIMD3<Float>
+        var easeIn: Bool
     }
 }

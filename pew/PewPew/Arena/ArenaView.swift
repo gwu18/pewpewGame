@@ -27,9 +27,20 @@ struct ArenaView: View {
                 let arena = appModel.arena
                 let session = appModel.session
                 let input = appModel.input
+                #if DEBUG
+                let autoplay = appModel.autoplay
+                let subscription = content.subscribe(to: SceneEvents.Update.self) { [weak arena, weak session, weak input, weak autoplay] _ in
+                    let now = CACurrentMediaTime()
+                    arena?.advance(now: now, input: input, session: session)
+                    if let session, let arena {
+                        autoplay?.update(now: now, session: session, arena: arena)
+                    }
+                }
+                #else
                 let subscription = content.subscribe(to: SceneEvents.Update.self) { [weak arena, weak session, weak input] _ in
                     arena?.advance(now: CACurrentMediaTime(), input: input, session: session)
                 }
+                #endif
                 appModel.arena.retain(subscription)
             } catch {
                 print("Target textures failed: \(error)")
@@ -39,8 +50,13 @@ struct ArenaView: View {
             }
         } attachments: {
             Attachment(id: "exit") {
-                Button("Exit Arena") {
-                    Task { await dismissImmersiveSpace() }
+                VStack(spacing: 8) {
+                    #if DEBUG
+                    DebugPanel()
+                    #endif
+                    Button("Exit Arena") {
+                        Task { await dismissImmersiveSpace() }
+                    }
                 }
             }
         }

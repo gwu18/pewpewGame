@@ -16,7 +16,6 @@ final class ArenaController: ArenaRendering {
     private var bodyMesh: MeshResource?
     private var records: [TargetID: Record] = [:]
     private var entityIDs: [ObjectIdentifier: TargetID] = [:]
-    private var spawnCount = 0
     var lookPinchEnabled = true
     private var updateSubscription: EventSubscription?
 
@@ -45,7 +44,6 @@ final class ArenaController: ArenaRendering {
     func reset() {
         removeAllTargets()
         fx.reset()
-        spawnCount = 0
         updateSubscription = nil
         for child in Array(root.children) {
             child.removeFromParent()
@@ -68,44 +66,56 @@ final class ArenaController: ArenaRendering {
     func spawnTarget(_ request: SpawnRequest, at time: TimeInterval) -> Bool {
         guard let materials else { return false }
         let entity = TargetFactory.make(
+            type: request.type,
             diameter: request.diameter,
             materials: materials,
             lookPinch: lookPinchEnabled,
             bodyMesh: bodyMesh
         )
-        entity.position = position(for: request)
+        entity.position = position()
         faceHead(entity)
         root.addChild(entity)
         fx.trackSpawn(id: request.id, entity: entity, diameter: request.diameter, at: time)
         records[request.id] = Record(
             entity: entity,
+            type: request.type,
             diameter: request.diameter,
             radius: request.diameter / 2
         )
         remember(entity, id: request.id)
-        spawnCount += 1
         return true
     }
 
     func removeTarget(_ id: TargetID, reason: RemovalReason) {
-        guard let record = records[id] else { return }
+        guard var record = records[id], !record.removing else { return }
+        record.removing = true
+        records[id] = record
+        let now = CACurrentMediaTime()
         switch reason {
         case .hit(let outcome):
-            records[id]?.removing = true
             let started = fx.beginHit(
                 id: id,
                 entity: record.entity,
                 diameter: record.diameter,
                 ring: outcome.ring,
-                at: CACurrentMediaTime()
+                at: now
             )
             if !started { destroy(id) }
-        case .expired, .roundEnded:
-            destroy(id)
+        case .expired:
+            let gray = record.type == .small ? materials?.smallGray : materials?.normalGray
+            let started = gray.map {
+                fx.beginExpire(id: id, entity: record.entity, diameter: record.diameter, gray: $0, at: now)
+            } ?? false
+            if !started { destroy(id) }
+        case .roundEnded:
+            if !fx.beginVanish(id: id, entity: record.entity, diameter: record.diameter, at: now) {
+                destroy(id)
+            }
         }
     }
 
     func removeAllTargets() {
+        fx.stopAnimations()
         for id in Array(records.keys) {
             destroy(id)
         }
@@ -129,14 +139,14 @@ final class ArenaController: ArenaRendering {
         return nil
     }
 
-    private func position(for request: SpawnRequest) -> SIMD3<Float> {
-        if spawnCount == 0 {
-            return SIMD3(0, 1.3, -0.5)
-        }
+    func nearestTargetID() -> TargetID? {
+        snapshots().min { simd_length($0.center - head) < simd_length($1.center - head) }?.id
+    }
+
+    private func position() -> SIMD3<Float> {
         let forward = session?.nextFloat(in: bands.stayPutTouchForward.lower...bands.stayPutTouchForward.upper) ?? 0.5
         let lateral = session?.nextFloat(in: -bands.stayPutTouchLateral...bands.stayPutTouchLateral) ?? 0
         let vertical = session?.nextFloat(in: bands.stayPutTouchVertical.lower...bands.stayPutTouchVertical.upper) ?? -0.2
-        _ = request
         return SIMD3(head.x + lateral, head.y + vertical, head.z - forward)
     }
 
@@ -168,6 +178,7 @@ final class ArenaController: ArenaRendering {
 
     private struct Record {
         var entity: Entity
+        var type: TargetType
         var diameter: Float
         var radius: Float
         var removing = false

@@ -30,8 +30,8 @@
 		07D58D16309D4E560067B614 /* Exceptions for "PewPew" folder in "PewPew" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
 				Debug/.gitkeep,
+				Info.plist,
 				Interaction/.gitkeep,
 				Placement/.gitkeep,
 			);

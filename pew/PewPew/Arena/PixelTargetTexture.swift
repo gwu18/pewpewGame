@@ -148,11 +148,11 @@ enum TargetTextures {
         )
     }
 
-    private static func colored(_ map: [[FacePixel]]) -> [[SIMD4<UInt8>]] {
+    @MainActor private static func colored(_ map: [[FacePixel]]) -> [[SIMD4<UInt8>]] {
         map.map { row in row.map(color(for:)) }
     }
 
-    private static func color(for pixel: FacePixel) -> SIMD4<UInt8> {
+    @MainActor private static func color(for pixel: FacePixel) -> SIMD4<UInt8> {
         switch pixel {
         case .clear: return SIMD4(0, 0, 0, 0)
         case .gold: return bytes(Theme.Palette.bullseyeGold.uiColor)
@@ -269,7 +269,7 @@ enum TargetTextures {
         return material
     }
 
-    private static func bytes(_ color: UIColor) -> SIMD4<UInt8> {
+    @MainActor private static func bytes(_ color: UIColor) -> SIMD4<UInt8> {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         color.getRed(&r, green: &g, blue: &b, alpha: &a)
         return SIMD4(UInt8(r * 255), UInt8(g * 255), UInt8(b * 255), 255)

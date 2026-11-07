@@ -1,6 +1,6 @@
 import Foundation
 
-public enum RemovalReason: Sendable {
+public enum RemovalReason: Sendable, Equatable {
     case hit(HitOutcome)
     case expired
     case roundEnded

@@ -16,12 +16,16 @@ final class AppModel {
     let arena: ArenaController
     let tracking: TrackingService
     let input: InputCoordinator
+    #if DEBUG
+    let autoplay = AutoplayBot()
+    #endif
 
     init() {
         let session = GameSession()
         let arena = ArenaController()
         let tracking = TrackingService()
         session.arena = arena
+        session.onEvent = { print("PewPew \($0)") }
         arena.bind(session)
         self.session = session
         self.arena = arena

@@ -18,7 +18,7 @@ public struct HitEvent: Sendable {
     }
 }
 
-public struct HitOutcome: Sendable {
+public struct HitOutcome: Sendable, Equatable {
     public let points: Int
     public let ring: Ring
     public let reactionTime: TimeInterval

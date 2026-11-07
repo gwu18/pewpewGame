@@ -5,6 +5,7 @@ import simd
 enum TargetFactory {
     @MainActor
     static func make(
+        type: TargetType,
         diameter: Float,
         materials: TargetMaterials,
         lookPinch: Bool,
@@ -12,9 +13,10 @@ enum TargetFactory {
     ) -> Entity {
         let root = Entity()
         root.name = "target"
+        let faceMaterial: UnlitMaterial = type == .small ? materials.small : materials.normal
         let face = ModelEntity(
             mesh: .generatePlane(width: 1, height: 1),
-            materials: [materials.normal]
+            materials: [faceMaterial]
         )
         face.name = "face"
         root.addChild(face)

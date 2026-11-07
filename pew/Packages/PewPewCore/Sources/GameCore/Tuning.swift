@@ -58,6 +58,14 @@ public struct Tuning: Sendable {
             self.small = small
             self.moving = moving
         }
+
+        public func value(_ type: TargetType) -> T {
+            switch type {
+            case .normal: normal
+            case .small: small
+            case .moving: moving
+            }
+        }
     }
 
     public struct DifficultyTriple<T: Sendable>: Sendable {
@@ -68,6 +76,14 @@ public struct Tuning: Sendable {
             self.easy = easy
             self.normal = normal
             self.hard = hard
+        }
+
+        public func value(_ difficulty: Difficulty) -> T {
+            switch difficulty {
+            case .easy: easy
+            case .normal: normal
+            case .hard: hard
+            }
         }
     }
 
