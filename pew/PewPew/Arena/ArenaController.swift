@@ -11,6 +11,7 @@ final class ArenaController: ArenaRendering {
     private let bands = Tuning.default.bands
     private let root = Entity()
     private let fx = HitFX()
+    private let popups = ScorePopups()
     private weak var session: GameSession?
     private var materials: TargetMaterials?
     private var bodyMesh: MeshResource?
@@ -34,6 +35,7 @@ final class ArenaController: ArenaRendering {
             depth: Tuning.default.fx.bodyDepthRatio
         )
         fx.prepare(root: root, materials: materials)
+        popups.prepare(root: root)
     }
 
     func retain(_ subscription: EventSubscription) {
@@ -44,6 +46,7 @@ final class ArenaController: ArenaRendering {
     func reset() {
         removeAllTargets()
         fx.reset()
+        popups.reset()
         updateSubscription = nil
         for child in Array(root.children) {
             child.removeFromParent()
@@ -61,6 +64,7 @@ final class ArenaController: ArenaRendering {
         for id in fx.update(now: now) {
             destroy(id)
         }
+        popups.update(now: now)
     }
 
     func spawnTarget(_ request: SpawnRequest, at time: TimeInterval) -> Bool {
@@ -72,7 +76,7 @@ final class ArenaController: ArenaRendering {
             lookPinch: lookPinchEnabled,
             bodyMesh: bodyMesh
         )
-        entity.position = position()
+        entity.position = position(space: request.config.space)
         faceHead(entity)
         root.addChild(entity)
         fx.trackSpawn(id: request.id, entity: entity, diameter: request.diameter, at: time)
@@ -93,6 +97,7 @@ final class ArenaController: ArenaRendering {
         let now = CACurrentMediaTime()
         switch reason {
         case .hit(let outcome):
+            popups.spawn(outcome, at: record.entity.position(relativeTo: root), hitTime: now)
             let started = fx.beginHit(
                 id: id,
                 entity: record.entity,
@@ -116,10 +121,26 @@ final class ArenaController: ArenaRendering {
 
     func removeAllTargets() {
         fx.stopAnimations()
+        popups.stopAll()
         for id in Array(records.keys) {
             destroy(id)
         }
     }
+
+    #if DEBUG
+    /// One tag per variant, held for a minute in front of the viewer, for simulator screenshots.
+    func showPopupDemo(now: TimeInterval) {
+        let demos: [(HitOutcome, SIMD3<Float>)] = [
+            (HitOutcome(points: 100, ring: .none, reactionTime: 1, multiplier: 1, streak: 1), [-0.36, 1.66, -1.2]),
+            (HitOutcome(points: 180, ring: .red, reactionTime: 1, multiplier: 1.5, streak: 4), [-0.12, 1.66, -1.2]),
+            (HitOutcome(points: 250, ring: .gold, reactionTime: 1, multiplier: 1, streak: 1), [0.12, 1.66, -1.2]),
+            (HitOutcome(points: 500, ring: .gold, reactionTime: 1, multiplier: 2, streak: 8), [0.36, 1.66, -1.2]),
+        ]
+        for (outcome, position) in demos {
+            popups.spawn(outcome, at: position, hitTime: now, life: 60)
+        }
+    }
+    #endif
 
     func snapshots() -> [TargetSnapshot] {
         records.compactMap { id, record in
@@ -143,7 +164,16 @@ final class ArenaController: ArenaRendering {
         snapshots().min { simd_length($0.center - head) < simd_length($1.center - head) }?.id
     }
 
-    private func position() -> SIMD3<Float> {
+    private func position(space: SpaceMode) -> SIMD3<Float> {
+        guard space == .roam else { return stayPutPosition() }
+        let distance = session?.nextFloat(in: bands.roamTouchDistance.lower...bands.roamTouchDistance.upper) ?? 1
+        let limit = bands.roamTouchAzimuthDegrees * .pi / 180
+        let azimuth = session?.nextFloat(in: -limit...limit) ?? 0
+        let height = session?.nextFloat(in: bands.roamTouchHeight.lower...bands.roamTouchHeight.upper) ?? 1.2
+        return SIMD3(head.x + sin(azimuth) * distance, height, head.z - cos(azimuth) * distance)
+    }
+
+    private func stayPutPosition() -> SIMD3<Float> {
         let forward = session?.nextFloat(in: bands.stayPutTouchForward.lower...bands.stayPutTouchForward.upper) ?? 0.5
         let lateral = session?.nextFloat(in: -bands.stayPutTouchLateral...bands.stayPutTouchLateral) ?? 0
         let vertical = session?.nextFloat(in: bands.stayPutTouchVertical.lower...bands.stayPutTouchVertical.upper) ?? -0.2
