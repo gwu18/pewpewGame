@@ -3,26 +3,34 @@ import GameCore
 import QuartzCore
 import SwiftUI
 
+/// Simulator/test tools. Debug builds only, and hidden until the lobby's "Debug" button is used.
 struct DebugPanel: View {
     @Environment(AppModel.self) private var appModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("DEBUG")
+                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                control("Hide") { appModel.showDebug = false }
+            }
             Text(status)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
             HStack(spacing: 6) {
-                control("Start 30s", action: start)
-                control(appModel.autoplay.enabled ? "Autoplay On" : "Autoplay", action: toggleAutoplay)
+                control(appModel.autoplay.enabled ? "Autoplay: on" : "Autoplay: off", action: toggleAutoplay)
+                control("Expire all", action: expireAll)
             }
             HStack(spacing: 6) {
-                control("Hit", action: { hit(rho: 0.5) })
-                control("Bullseye", action: { hit(rho: 0.1) })
-                control("Miss", action: miss)
-                control("Expire", action: expireAll)
+                control("Hit outer", action: { hit(rho: 0.5) })
+                control("Hit bullseye", action: { hit(rho: 0.1) })
+                control("Miss shot", action: miss)
             }
         }
-        .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .padding(12)
+        .frame(width: 340)
+        .glassBackgroundEffect(in: .rect(cornerRadius: 20))
     }
 
     private var status: String {
@@ -33,7 +41,7 @@ struct DebugPanel: View {
         case .tutorial(let step):
             return "Tutorial \(step)"
         case .countdown:
-            return "Countdown \(Int(hud.timeRemaining))s"
+            return "Countdown"
         case .playing:
             return "\(Int(hud.timeRemaining.rounded(.up)))s  \(hud.score)  ×\(hud.multiplier)"
         case .results(let result):
@@ -43,14 +51,8 @@ struct DebugPanel: View {
 
     private func control(_ title: String, action: @escaping () -> Void) -> some View {
         Button(title, action: action)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.system(size: 13, weight: .semibold))
             .controlSize(.small)
-    }
-
-    private func start() {
-        appModel.autoplay.reset()
-        appModel.session.config.length = 30
-        appModel.session.start(now: CACurrentMediaTime())
     }
 
     private func toggleAutoplay() {

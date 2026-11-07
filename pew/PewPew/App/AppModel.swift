@@ -18,6 +18,8 @@ final class AppModel {
     let input: InputCoordinator
     #if DEBUG
     let autoplay = AutoplayBot()
+    /// Debug-build tools stay hidden until the lobby's "Debug" button turns them on.
+    var showDebug = false
     #endif
 
     init() {

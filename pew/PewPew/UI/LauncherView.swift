@@ -7,42 +7,51 @@ struct LauncherView: View {
 
     @State private var errorMessage: String?
 
-    private let buttonRed = Color(red: 200 / 255, green: 50 / 255, blue: 30 / 255)
-
     var body: some View {
-        VStack(spacing: 16) {
-            Text("PewPew")
-                .font(.system(size: 40, weight: .black, design: .rounded))
+        VStack(spacing: 0) {
+            Wordmark(logoSize: Theme.TypeSize.launcherLogo, iconSize: 56)
+                .padding(.top, Theme.Space.s)
 
             Text("Hit the targets. Beat the clock.")
-                .font(.system(size: 20, weight: .semibold))
+                .font(Theme.Fonts.body.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .padding(.top, Theme.Space.l)
 
-            Button("ENTER ARENA") {
+            Spacer(minLength: Theme.Space.xl)
+
+            Button {
+                UISound.play(.tap)
                 Task { await enterArena() }
+            } label: {
+                Text(appModel.arenaState == .opening ? "OPENING" : "ENTER ARENA")
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .font(.system(size: 20, weight: .semibold))
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .controlSize(.extraLarge)
-            .tint(buttonRed)
-            .frame(maxWidth: .infinity, minHeight: 68)
+            .primaryPixelButton()
             .disabled(appModel.arenaState == .opening)
+            .accessibilityLabel("Enter arena")
 
-            if let message = errorMessage ?? appModel.launchError {
-                Text(message)
-                    .font(.system(size: 17))
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
+            Group {
+                if let message = errorMessage ?? appModel.launchError {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                } else {
+                    Label("Uses hand tracking. Best in a clear, well-lit space.", systemImage: "hand.raised.fill")
+                        .foregroundStyle(.secondary)
+                }
             }
-
-            Text("Uses hand tracking. Best in a clear, well-lit space.")
-                .font(.system(size: 17))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            .font(Theme.Fonts.caption)
+            .multilineTextAlignment(.center)
+            .padding(.top, Theme.Space.l)
         }
-        .padding(24)
-        .frame(width: 520, height: 380)
+        .padding(.horizontal, Theme.Space.xl)
+        .padding(.vertical, Theme.Space.xxl)
+        .frame(width: Theme.Metrics.launcher.width, height: Theme.Metrics.launcher.height)
+        .onAppear { UISound.preload() }
+        #if DEBUG
+        .task {
+            if LaunchFlags.enterArena, appModel.arenaState == .closed { await enterArena() }
+        }
+        #endif
     }
 
     private func enterArena() async {

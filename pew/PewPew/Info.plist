@@ -6,6 +6,10 @@
 	<string>PewPew follows your hands so you can poke and shoot targets.</string>
 	<key>NSWorldSensingUsageDescription</key>
 	<string>PewPew finds walls and tables so targets can appear around your room.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>PressStart2P-Regular.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationPreferredDefaultSceneSessionRole</key>
