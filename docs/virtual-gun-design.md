@@ -2,6 +2,8 @@
 
 **Status:** exploratory / experimental. Captures current intent so Gary can decide whether to build it. **Not a build commitment.** Do not treat this as a milestone rewrite of `docs/sonnet-build-plan.md`.
 
+**Changelog:** Thu Nov 19, 2026 — locked holster default (float in air in front at round start) and put-down (open hand drops); updated Open questions.
+
 | | |
 | --- | --- |
 | Mode | Separate from finger-gun for now; off by default |
@@ -32,12 +34,19 @@
 ## Player loop
 
 1. **Lobby** — before the round, turn on an experimental **Virtual Gun** toggle (default **off**). Same Distance / Space (Stay Put vs Roam) / Size settings as finger-gun / blaster rounds.
-2. **Spawn / holster** — guns appear in a floating holster **or** floating in air in front of the player (exact default still open).
-3. **Grab** — make a **fist** near a gun to pick it up. While held, the hand pose matches the current finger-gun trigger setup: **grip held, index straight or slightly curled** (index is trigger only).
+2. **Spawn** — at round start, both guns float in the air **in front of the player** (not a chest holster). Player must pick them up to shoot.
+3. **Grab** — make a **fist** near a gun to pick it up (**fist = grab only**). While held, the hand pose matches the current finger-gun trigger setup: **grip held, index straight or slightly curled** (index is trigger only).
 4. **Aim** — the **3D gun is the aiming tool**. Ray originates at the **barrel**; the mesh is **fixed to the hand** when picked up (snap/smooth at implementer discretion so it doesn’t jitter or drop randomly).
 5. **Fire** — **index finger bend while holding grip**, matching today’s finger-gun trigger thresholds and single-shot re-arm.
-6. **Put down** — release/holster the gun (exact gesture still open). While Virtual Gun mode is selected, put-down = **unarmed** — **no finger-gun fallback**.
+6. **Put down** — **open the hand** to drop the gun (not a second fist). While Virtual Gun mode is selected, put-down = **unarmed** — **no finger-gun fallback**.
 7. Round uses the same spawn Distance / Space / Size path as a normal blaster round.
+
+### Decided (Gary)
+
+| Topic | Decision |
+| --- | --- |
+| Holster / spawn | Floating in the air in front of the player at round start (not chest) |
+| Put-down | Opening the hand drops the gun (not a second fist); fist is grab only |
 
 ---
 
@@ -74,7 +83,7 @@ Reuse the **trigger metric and fire edges**; replace **aim origin/direction** an
 
 | Concern | Today (finger-gun) | Virtual gun |
 | --- | --- | --- |
-| Grip / arm | Thumb raised + curled non-index fingers (`FingerGunClassifier.isGunPose`) | Fist = grab; while held, grip like finger-gun trigger setup (index free) |
+| Grip / arm | Thumb raised + curled non-index fingers (`FingerGunClassifier.isGunPose`) | Fist = grab; open hand = drop; while held, grip like finger-gun trigger setup (index free) |
 | Trigger | Index straightness curl: pull ≤ `triggerPull` (0.75), release ≥ `triggerOnset` (0.85) | **Same** index-bend while holding the mesh |
 | Aim | Wrist origin; forearm → wrist (else palm) direction — **index is not the ray** | **Barrel** of the attached gun mesh; gun fixed to hand |
 | Fire edge | `armedReady` → `armedPulled` in `FingerGunStateMachine`; `InputCoordinator.fire` | Same edge semantics; ray from barrel |
@@ -110,12 +119,8 @@ Suggested shape: a new experimental flag (e.g. on `RoundConfig` or `PlayerSettin
 
 ## Open questions
 
-1. **Default holster:** floating at chest vs floating in air in front of the player?
-2. **Fist semantics:** fist = grab only, or fist toggles grab/release?
-3. **Put-down gesture:** second fist, open hand, or explicit holster zone?
-4. **Muzzle flash / pew SFX:** reuse current `muzzle_star` + `pew`/`pew_b`, or distinct cues for the mesh gun?
-5. **Spawn at round start:** both guns already present (holstered/floating), or must the player pick them up before they can fire?
-6. (Implementer detail, not blocking design) snap distance / smoothing / attach offset while held.
+1. **Muzzle flash / pew SFX:** reuse current `muzzle_star` + `pew`/`pew_b`, or distinct cues for the mesh gun?
+2. (Implementer detail, not blocking design) snap distance / smoothing / attach offset while held; where the dropped gun rests (float in place vs return to front spawn).
 
 ---
 
@@ -124,7 +129,7 @@ Suggested shape: a new experimental flag (e.g. on `RoundConfig` or `PlayerSettin
 High level only — **do not** edit `docs/sonnet-build-plan.md` unless asked:
 
 1. Add lobby experimental toggle + persisted setting (default off).
-2. Spawn two RealityKit gun entities; attach-follow with freeze-on-tracking-loss.
-3. Fist near gun → hold; index straightness reuse from `GunMetrics` / shared thresholds → fire via barrel ray into existing `HitMath` / session hit path.
+2. At round start, spawn two RealityKit gun entities floating in front of the player; attach-follow on fist grab, drop on open hand, freeze-on-tracking-loss.
+3. Index straightness reuse from `GunMetrics` / shared thresholds → fire via barrel ray into existing `HitMath` / session hit path.
 4. L/R tracers (red/blue); leave mesh art placeholder.
 5. Device playtest vs finger-gun; only then decide whether to promote or drop.
